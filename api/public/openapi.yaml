@@ -1,0 +1,55 @@
+openapi: 3.0.3
+info:
+  title: Elog API
+  version: "0.1.0"
+servers:
+  - url: http://localhost:8000
+paths:
+  /api/login:
+    post:
+      summary: Login via servidor de autenticação
+      description: >
+        Recebe credenciais e repassa para o servidor de autenticação configurado em AUTH_SERVER_URL.
+        Retorna somente token, name e email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - login
+                - password
+              properties:
+                login:
+                  type: string
+                  example: johndoe@example.com
+                password:
+                  type: string
+                  example: "********"
+                google2faValidation:
+                  type: string
+                  nullable: true
+                  example: "******"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        example: 1|8fG09Kcxc1gnGqGG064tWT8XtSJLDJi1GHYpjKFG
+                      name:
+                        type: string
+                        example: John Doen
+                      email:
+                        type: string
+                        example: johndoe@example.com
+        "422":
+          description: Erro de validação

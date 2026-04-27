@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'auth_server' => [
+        'url' => env('AUTH_SERVER_URL'),
+        'timeout' => env('AUTH_SERVER_TIMEOUT', 5),
+    ],
+
 ];
