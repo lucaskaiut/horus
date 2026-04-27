@@ -1,0 +1,120 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  opensearch:
+    image: opensearchproject/opensearch:2
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=Admin#12345
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2
+    environment:
+      - OPENSEARCH_HOSTS=["http://opensearch:9200"]
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+    ports:
+      - "5601:5601"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+
+  api:
+    image: thecodingmachine/php:8.4-v4-cli
+    working_dir: /var/www/html/api
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_URL=http://localhost:8000
+      - QUEUE_CONNECTION=redis
+      - CACHE_STORE=redis
+      - SESSION_DRIVER=redis
+      - REDIS_CLIENT=phpredis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OPENSEARCH_URL=http://opensearch:9200
+    volumes:
+      - ./api:/var/www/html/api
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    command: >
+      sh -lc "composer install &&
+              php artisan serve --host=0.0.0.0 --port=8000"
+
+  worker:
+    image: thecodingmachine/php:8.4-v4-cli
+    working_dir: /var/www/html/api
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - QUEUE_CONNECTION=redis
+      - CACHE_STORE=redis
+      - SESSION_DRIVER=redis
+      - REDIS_CLIENT=phpredis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OPENSEARCH_URL=http://opensearch:9200
+    volumes:
+      - ./api:/var/www/html/api
+    depends_on:
+      redis:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    command: >
+      sh -lc "composer install &&
+              php artisan queue:listen --tries=1 --timeout=0"
+
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./web:/app
+      - web_node_modules:/app/node_modules
+    ports:
+      - "${WEB_PORT:-3002}:3000"
+    depends_on:
+      api:
+        condition: service_started
+    command: >
+      sh -lc "npm install && npm run dev -- --hostname 0.0.0.0 --port 3000"
+
+volumes:
+  web_node_modules:
+  opensearch_data:
+  redis_data:
