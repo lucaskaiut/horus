@@ -1,0 +1,29 @@
+---
+alwaysApply: true
+---
+
+# Regras obrigatórias de testes (web)
+
+Estas regras devem ser aplicadas automaticamente em **todo novo código** criado ou alterado no painel web.
+
+## 1) Todo código novo deve vir com testes
+
+- **UI unit tests obrigatórios**: todo componente/página com interação deve ter testes de UI cobrindo:
+  - renderização
+  - validação de inputs
+  - eventos (digitação, clique, submit)
+  - estados de erro e sucesso
+  - redirects/navegação quando aplicável (mockando `next/navigation`)
+- **Feature/E2E obrigatórios**: todo fluxo novo (feature) deve ter testes de ponta a ponta cobrindo o caminho feliz e pelo menos 1 caminho de erro.
+
+## 2) Critérios mínimos para aprovação
+
+- Nenhuma mudança de UI deve ser entregue sem teste que valide **inputs, botões e eventos**.
+- `npm test` deve passar no container.
+- Não é permitido “deixar para depois”: se o código foi criado/alterado, os testes entram no mesmo PR/commit.
+
+## 3) Padrões para testes de UI
+
+- Usar **Testing Library** (`@testing-library/react` e `@testing-library/user-event`) com Vitest.
+- Testes devem focar em comportamento (o que o usuário vê/faz), não em detalhes internos.
+

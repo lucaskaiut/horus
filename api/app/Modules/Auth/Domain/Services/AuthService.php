@@ -14,13 +14,14 @@ final class AuthService
      */
     public function login(string $login, string $password, ?string $google2faValidation): array
     {
-        $url = (string) config('services.auth_server.url', '');
+        $baseUrl = (string) config('services.auth_server.base_url', '');
         $timeout = (int) config('services.auth_server.timeout', 5);
 
-        $response = Http::timeout($timeout)
+        $response = Http::baseUrl($baseUrl)
+            ->timeout($timeout)
             ->acceptJson()
             ->asJson()
-            ->post($url, [
+            ->post('/auth', [
                 'login' => $login,
                 'password' => $password,
                 'google2faValidation' => $google2faValidation,
@@ -35,5 +36,24 @@ final class AuthService
             'email' => (string) data_get($json, 'content.email', ''),
         ];
     }
-}
 
+    /**
+     * @return array<string, mixed>
+     *
+     * @throws RequestException
+     */
+    public function me(string $bearerToken): array
+    {
+        $baseUrl = (string) config('services.auth_server.base_url', '');
+        $timeout = (int) config('services.auth_server.timeout', 5);
+
+        return Http::baseUrl($baseUrl)
+            ->timeout($timeout)
+            ->withToken($bearerToken)
+            ->acceptJson()
+            ->asJson()
+            ->get('/auth/me')
+            ->throw()
+            ->json();
+    }
+}

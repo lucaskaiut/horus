@@ -9,7 +9,7 @@ paths:
     post:
       summary: Login via servidor de autenticação
       description: >
-        Recebe credenciais e repassa para o servidor de autenticação configurado em AUTH_SERVER_URL.
+        Recebe credenciais e repassa para o servidor de autenticação configurado em AUTH_SERVER_URL (base URL).
         Retorna somente token, name e email.
       requestBody:
         required: true
@@ -53,3 +53,39 @@ paths:
                         example: johndoe@example.com
         "422":
           description: Erro de validação
+  /api/me:
+    post:
+      summary: Valida sessão/token via servidor de autenticação
+      description: >
+        Encaminha o Bearer token para o servidor de autenticação em AUTH_SERVER_URL e valida o retorno.
+        HTTP OK → usuário logado; HTTP Fail → usuário não autenticado.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Usuário logado.
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Usuário não autenticado.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

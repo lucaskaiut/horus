@@ -9,11 +9,11 @@ class LoginTest extends TestCase
 {
     public function test_login_proxies_to_auth_server_and_returns_token_name_email(): void
     {
-        config()->set('services.auth_server.url', 'https://auth.test/login');
+        config()->set('services.auth_server.base_url', 'https://auth.test');
         config()->set('services.auth_server.timeout', 5);
 
         Http::fake([
-            'https://auth.test/login' => Http::response([
+            'https://auth.test/auth' => Http::response([
                 'success' => true,
                 'message' => 'OK',
                 'content' => [
@@ -43,11 +43,10 @@ class LoginTest extends TestCase
         ]);
 
         Http::assertSent(function ($request) {
-            return $request->url() === 'https://auth.test/login'
+            return $request->url() === 'https://auth.test/auth'
                 && $request['login'] === 'johndoe@example.com'
                 && $request['password'] === 'secret'
                 && $request['google2faValidation'] === '123456';
         });
     }
 }
-
