@@ -96,7 +96,7 @@ services:
         condition: service_healthy
     command: >
       sh -lc "composer install &&
-              php artisan queue:listen --tries=1 --timeout=0"
+              php artisan queue:listen --tries=1 --timeout=0 --queue=logs"
 
   web:
     image: node:20-alpine
