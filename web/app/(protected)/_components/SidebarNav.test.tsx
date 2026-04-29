@@ -33,8 +33,26 @@ describe("SidebarNav (UI)", () => {
     const dashboard = screen.getByRole("link", { name: "Dashboard" });
     const logs = screen.getByRole("link", { name: "Logs" });
 
-    expect(dashboard).toHaveAttribute("aria-current", "page");
     expect(logs).toHaveAttribute("aria-current", "page");
+    expect(dashboard).not.toHaveAttribute("aria-current");
+  });
+
+  it("deve marcar dashboard como ativo apenas na raiz", () => {
+    render(<SidebarNav currentPath="/" />);
+    const dashboard = screen.getByRole("link", { name: "Dashboard" });
+    const logs = screen.getByRole("link", { name: "Logs" });
+
+    expect(dashboard).toHaveAttribute("aria-current", "page");
+    expect(logs).not.toHaveAttribute("aria-current");
+  });
+
+  it("deve tratar barra final como a mesma rota", () => {
+    render(<SidebarNav currentPath="/logs/" />);
+    const dashboard = screen.getByRole("link", { name: "Dashboard" });
+    const logs = screen.getByRole("link", { name: "Logs" });
+
+    expect(logs).toHaveAttribute("aria-current", "page");
+    expect(dashboard).not.toHaveAttribute("aria-current");
   });
 
   it("não deve marcar como ativo quando fora da rota", () => {
@@ -46,4 +64,3 @@ describe("SidebarNav (UI)", () => {
     expect(logs).not.toHaveAttribute("aria-current");
   });
 });
-

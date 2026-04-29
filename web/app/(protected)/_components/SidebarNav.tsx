@@ -7,15 +7,30 @@ type MenuItem = {
 };
 
 const ITEMS: MenuItem[] = [
-  { id: "dashboard", label: "Dashboard", href: "/logs" },
+  { id: "dashboard", label: "Dashboard", href: "/" },
   { id: "logs", label: "Logs", href: "/logs" },
 ];
 
-function isActivePath(currentPath: string, href: string): boolean {
-  if (href === "/") {
-    return currentPath === "/";
+function normalizePath(path: string): string {
+  if (path === "/") {
+    return "/";
   }
-  return currentPath === href || currentPath.startsWith(`${href}/`);
+
+  return path.endsWith("/") ? path.slice(0, -1) : path;
+}
+
+function isActivePath(currentPath: string, href: string): boolean {
+  const normalizedCurrentPath = normalizePath(currentPath);
+  const normalizedHref = normalizePath(href);
+
+  if (normalizedHref === "/") {
+    return normalizedCurrentPath === "/";
+  }
+
+  return (
+    normalizedCurrentPath === normalizedHref ||
+    normalizedCurrentPath.startsWith(`${normalizedHref}/`)
+  );
 }
 
 export default function SidebarNav(props: { currentPath: string }) {
@@ -53,4 +68,3 @@ export default function SidebarNav(props: { currentPath: string }) {
     </aside>
   );
 }
-
