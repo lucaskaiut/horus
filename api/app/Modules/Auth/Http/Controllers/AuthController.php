@@ -5,7 +5,6 @@ namespace App\Modules\Auth\Http\Controllers;
 use App\Modules\Auth\Domain\Services\AuthService;
 use App\Modules\Auth\Http\Requests\LoginRequest;
 use App\Modules\Auth\Http\Resources\AuthResource;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -33,23 +32,14 @@ final class AuthController
 
     public function me(Request $request): JsonResponse
     {
-        $bearerToken = (string) $request->bearerToken();
-
-        if ($bearerToken === '') {
-            return response()->json(['message' => 'Usuário não autenticado.'], Response::HTTP_UNAUTHORIZED);
-        }
-
-        try {
-            $result = $this->authService->me($bearerToken);
-        } catch (RequestException) {
-            return response()->json(['message' => 'Usuário não autenticado.'], Response::HTTP_UNAUTHORIZED);
-        }
+        /** @var array{id:?string,name:?string,email:?string}|null $authServerUser */
+        $authServerUser = $request->attributes->get('auth_server_user');
 
         return response()->json([
             'message' => 'Usuário logado.',
             'data' => [
-                'name' => (string) data_get($result, 'content.name', data_get($result, 'name', '')),
-                'email' => (string) data_get($result, 'content.email', data_get($result, 'email', '')),
+                'name' => (string) data_get($authServerUser, 'name', ''),
+                'email' => (string) data_get($authServerUser, 'email', ''),
             ],
         ], Response::HTTP_OK);
     }

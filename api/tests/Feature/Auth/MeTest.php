@@ -14,7 +14,12 @@ class MeTest extends TestCase
         config()->set('services.auth_server.timeout', 5);
 
         Http::fake([
-            'https://auth.test/auth/me' => Http::response(['ok' => true], 200),
+            'https://auth.test/auth/me' => Http::response([
+                'content' => [
+                    'name' => 'John Doen',
+                    'email' => 'johndoe@example.com',
+                ],
+            ], 200),
         ]);
 
         $response = $this->postJson('/api/me', [], [
@@ -24,6 +29,10 @@ class MeTest extends TestCase
         $response->assertOk();
         $response->assertJson([
             'message' => 'Usuário logado.',
+            'data' => [
+                'name' => 'John Doen',
+                'email' => 'johndoe@example.com',
+            ],
         ]);
 
         Http::assertSent(function ($request) {

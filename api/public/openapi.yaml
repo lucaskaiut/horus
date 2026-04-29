@@ -82,6 +82,124 @@ paths:
                   message:
                     type: string
                     example: Usuário não autenticado.
+  /api/logs:
+    post:
+      summary: Recebe um log para processamento assíncrono
+      description: >
+        Valida o Bearer token no servidor externo usando `/auth/me`,
+        valida o payload, gera `tracking_id` e publica o log na fila de processamento.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - level
+                - message
+                - source
+                - environment
+              properties:
+                level:
+                  type: string
+                  enum: [debug, info, notice, warning, error, critical, alert, emergency]
+                  example: error
+                message:
+                  type: string
+                  example: Unexpected exception while processing order
+                context:
+                  type: object
+                  additionalProperties: true
+                entity_name:
+                  type: string
+                  nullable: true
+                  example: order
+                entity_id:
+                  type: string
+                  nullable: true
+                  example: "123"
+                source:
+                  type: string
+                  example: billing-api
+                environment:
+                  type: string
+                  example: production
+                channel:
+                  type: string
+                  nullable: true
+                  example: http
+                request_id:
+                  type: string
+                  nullable: true
+                  example: req-123
+                trace_id:
+                  type: string
+                  nullable: true
+                  example: trace-123
+                user_id:
+                  type: string
+                  nullable: true
+                  example: user-123
+                ip_address:
+                  type: string
+                  nullable: true
+                  example: 10.0.0.10
+                user_agent:
+                  type: string
+                  nullable: true
+                  example: Mozilla/5.0
+                exception:
+                  type: object
+                  nullable: true
+                  properties:
+                    class:
+                      type: string
+                      nullable: true
+                      example: RuntimeException
+                    message:
+                      type: string
+                      nullable: true
+                      example: Failure
+                    file:
+                      type: string
+                      nullable: true
+                      example: /var/www/app/OrderService.php
+                    line:
+                      type: integer
+                      nullable: true
+                      example: 88
+                    stack_trace:
+                      type: string
+                      nullable: true
+                      example: stack trace content
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Log recebido para processamento
+                  tracking_id:
+                    type: string
+                    example: 01HXABC123
+        "401":
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Token inválido ou não autorizado.
+        "422":
+          description: Erro de validação
 
 components:
   securitySchemes:

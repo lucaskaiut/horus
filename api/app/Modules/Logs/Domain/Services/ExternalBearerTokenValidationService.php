@@ -23,27 +23,20 @@ final class ExternalBearerTokenValidationService
         $json = $response->json();
 
         if (! is_array($json)) {
-            return TokenValidationResult::invalid();
+            return TokenValidationResult::valid();
         }
 
-        return TokenValidationResult::fromAuthServerPayload($json);
+        return TokenValidationResult::valid(
+            clientId: isset($json['id']) ? (string) $json['id'] : null,
+            clientName: (string) data_get($json, 'content.name', data_get($json, 'name')),
+            clientEmail: (string) data_get($json, 'content.email', data_get($json, 'email')),
+        );
     }
 
     private function sendTokenValidationRequest(string $bearerToken): Response
     {
         $timeout = (int) config('services.auth_server.timeout', 5);
-        $absoluteUrl = (string) config('services.auth_server.token_validate_url', '');
-
-        if ($absoluteUrl !== '') {
-            return Http::timeout($timeout)
-                ->withToken($bearerToken)
-                ->acceptJson()
-                ->asJson()
-                ->get($absoluteUrl);
-        }
-
         $baseUrl = (string) config('services.auth_server.base_url', '');
-        $path = ltrim((string) config('services.auth_server.token_validate_path', 'api/token/validate'), '/');
 
         if ($baseUrl === '') {
             return Http::response(['valid' => false], 503);
@@ -54,6 +47,6 @@ final class ExternalBearerTokenValidationService
             ->withToken($bearerToken)
             ->acceptJson()
             ->asJson()
-            ->get('/'.$path);
+            ->get('/auth/me');
     }
 }

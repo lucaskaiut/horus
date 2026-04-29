@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Modules\Logs\Domain\Contracts\LogDocumentIndexer;
+use App\Modules\Logs\Infrastructure\OpenSearch\OpenSearchLogDocumentIndexer;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +13,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(LogDocumentIndexer::class, OpenSearchLogDocumentIndexer::class);
     }
 
     /**

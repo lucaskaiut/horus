@@ -91,7 +91,7 @@ Responsável por:
 * Publicar mensagem na fila.
 * Expor endpoints de consulta.
 * Aplicar filtros e paginação.
-* Validar escopos.
+* Validar token via rota já existente do servidor de autenticação.
 
 ---
 
@@ -184,36 +184,28 @@ Authorization: Bearer {token}
 ## 5.3 Configuração
 
 ```env
-AUTH_SERVER_URL=https://auth.internal/api/token/validate
+AUTH_SERVER_URL=https://auth.internal
 AUTH_SERVER_TIMEOUT=5
 ```
 
 ## 5.4 Resposta esperada
 
-```json
-{
-  "valid": true,
-  "client": {
-    "id": "api",
-    "name": "API"
-  },
-  "scopes": ["logs:create"]
-}
+```http
+GET /auth/me
+```
+
+Resposta HTTP esperada:
+
+```txt
+200 OK = token válido
+401/403 = token inválido ou não autorizado
 ```
 
 ---
 
-# 6. Escopos
+# 6. Autorização
 
-```txt
-logs:create
-logs:read
-logs:delete
-logs:admin
-logs:failed:read
-logs:failed:retry
-logs:failed:discard
-```
+Se o token for válido no servidor externo, a criação do log é permitida.
 
 ---
 
@@ -560,7 +552,6 @@ Monitorar:
 * Logs indexados no OpenSearch
 * Falhas vão para fila de erro
 * Autenticação externa funcionando
-* Escopos respeitados
 * Filtros rápidos
 * Consulta exige período
 * Painel funcional

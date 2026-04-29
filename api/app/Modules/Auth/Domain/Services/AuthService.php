@@ -37,23 +37,4 @@ final class AuthService
         ];
     }
 
-    /**
-     * @return array<string, mixed>
-     *
-     * @throws RequestException
-     */
-    public function me(string $bearerToken): array
-    {
-        $baseUrl = (string) config('services.auth_server.base_url', '');
-        $timeout = (int) config('services.auth_server.timeout', 5);
-
-        return Http::baseUrl($baseUrl)
-            ->timeout($timeout)
-            ->withToken($bearerToken)
-            ->acceptJson()
-            ->asJson()
-            ->get('/auth/me')
-            ->throw()
-            ->json();
-    }
 }

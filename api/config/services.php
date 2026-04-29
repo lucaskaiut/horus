@@ -40,4 +40,9 @@ return [
         'timeout' => env('AUTH_SERVER_TIMEOUT', 5),
     ],
 
+    'opensearch' => [
+        'url' => env('OPENSEARCH_URL'),
+        'timeout' => env('OPENSEARCH_TIMEOUT', 5),
+    ],
+
 ];

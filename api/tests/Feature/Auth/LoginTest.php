@@ -48,5 +48,7 @@ class LoginTest extends TestCase
                 && $request['password'] === 'secret'
                 && $request['google2faValidation'] === '123456';
         });
+
+        Http::assertSentCount(1);
     }
 }
