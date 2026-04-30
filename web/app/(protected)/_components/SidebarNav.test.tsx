@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-import SidebarNav from "@/app/(protected)/_components/SidebarNav";
+import SidebarNavItems from "@/app/(protected)/_components/SidebarNavItems";
+
+const usePathnameMock = vi.fn<[], string | null>();
 
 vi.mock("next/link", () => ({
   default: ({
@@ -20,16 +22,27 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-describe("SidebarNav (UI)", () => {
+vi.mock("next/navigation", () => ({
+  usePathname: () => usePathnameMock(),
+}));
+
+const ITEMS = [
+  { id: "dashboard", label: "Dashboard", href: "/" },
+  { id: "logs", label: "Logs", href: "/logs" },
+];
+
+describe("SidebarNavItems (UI)", () => {
   it("deve renderizar os itens de menu", () => {
-    render(<SidebarNav currentPath="/logs" />);
+    usePathnameMock.mockReturnValue("/logs");
+    render(<SidebarNavItems items={ITEMS} />);
     expect(screen.getByRole("navigation", { name: "Menu lateral" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Logs" })).toBeInTheDocument();
   });
 
   it("deve refletir o estado ativo para a rota atual", () => {
-    render(<SidebarNav currentPath="/logs" />);
+    usePathnameMock.mockReturnValue("/logs");
+    render(<SidebarNavItems items={ITEMS} />);
     const dashboard = screen.getByRole("link", { name: "Dashboard" });
     const logs = screen.getByRole("link", { name: "Logs" });
 
@@ -38,7 +51,8 @@ describe("SidebarNav (UI)", () => {
   });
 
   it("deve marcar dashboard como ativo apenas na raiz", () => {
-    render(<SidebarNav currentPath="/" />);
+    usePathnameMock.mockReturnValue("/");
+    render(<SidebarNavItems items={ITEMS} />);
     const dashboard = screen.getByRole("link", { name: "Dashboard" });
     const logs = screen.getByRole("link", { name: "Logs" });
 
@@ -47,7 +61,8 @@ describe("SidebarNav (UI)", () => {
   });
 
   it("deve tratar barra final como a mesma rota", () => {
-    render(<SidebarNav currentPath="/logs/" />);
+    usePathnameMock.mockReturnValue("/logs/");
+    render(<SidebarNavItems items={ITEMS} />);
     const dashboard = screen.getByRole("link", { name: "Dashboard" });
     const logs = screen.getByRole("link", { name: "Logs" });
 
@@ -56,7 +71,8 @@ describe("SidebarNav (UI)", () => {
   });
 
   it("não deve marcar como ativo quando fora da rota", () => {
-    render(<SidebarNav currentPath="/outra" />);
+    usePathnameMock.mockReturnValue("/outra");
+    render(<SidebarNavItems items={ITEMS} />);
     const dashboard = screen.getByRole("link", { name: "Dashboard" });
     const logs = screen.getByRole("link", { name: "Logs" });
 
