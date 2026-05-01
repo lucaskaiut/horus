@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 
 import { getRequiredApiUrl } from "@/app/api/auth/_server/env";
 import { sanitizeUser } from "@/app/api/auth/_server/sanitize";
+import { AUTH_SESSION_COOKIE_NAME } from "@/lib/auth/constants";
 import type { LoginRequestBody } from "@/lib/auth/types";
 
 type ApiLoginResponse = { data?: { token?: unknown; name?: unknown; email?: unknown } };
@@ -37,7 +38,7 @@ export async function POST(request: Request): Promise<Response> {
    * No Next.js 16+, `cookies()` é assíncrono e precisa ser aguardado antes de `.set`.
    */
   const cookieStore = await cookies();
-  cookieStore.set("elog_auth_token", token, {
+  cookieStore.set(AUTH_SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",

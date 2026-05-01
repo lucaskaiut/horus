@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 import { POST } from "@/app/api/auth/logout/route";
+import { AUTH_SESSION_COOKIE_NAME } from "@/lib/auth/constants";
 
 const { cookieSetMock, cookieGetMock } = vi.hoisted(() => ({
   cookieSetMock: vi.fn(),
@@ -51,7 +52,7 @@ describe("POST /api/auth/logout (BFF)", () => {
     );
 
     expect(cookieSetMock).toHaveBeenCalledWith(
-      "elog_auth_token",
+      AUTH_SESSION_COOKIE_NAME,
       "",
       expect.objectContaining({
         httpOnly: true,

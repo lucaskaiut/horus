@@ -3,13 +3,14 @@ import { cookies } from "next/headers";
 
 import { getRequiredApiUrl } from "@/app/api/auth/_server/env";
 import { sanitizeUser } from "@/app/api/auth/_server/sanitize";
+import { AUTH_SESSION_COOKIE_NAME } from "@/lib/auth/constants";
 
 type ApiMeResponse = { data?: { name?: unknown; email?: unknown } };
 
 export async function POST(request: Request): Promise<Response> {
   const apiUrl = getRequiredApiUrl();
   const cookieStore = await cookies();
-  const cookieToken = cookieStore.get("elog_auth_token")?.value ?? "";
+  const cookieToken = cookieStore.get(AUTH_SESSION_COOKIE_NAME)?.value ?? "";
   const headerAuth = request.headers.get("authorization")?.trim() ?? "";
   const authorization =
     headerAuth.length > 0

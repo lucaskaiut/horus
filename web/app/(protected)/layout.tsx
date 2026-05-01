@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import SidebarNav from "@/app/(protected)/_components/SidebarNav";
+import { AUTH_SESSION_COOKIE_NAME } from "@/lib/auth/constants";
 
 export default async function ProtectedLayout({
   children,
@@ -9,7 +10,7 @@ export default async function ProtectedLayout({
   children: React.ReactNode;
 }>) {
   const cookieStore = await cookies();
-  const token = cookieStore.get("elog_auth_token")?.value ?? "";
+  const token = cookieStore.get(AUTH_SESSION_COOKIE_NAME)?.value ?? "";
   if (!token.trim()) {
     redirect("/login");
   }

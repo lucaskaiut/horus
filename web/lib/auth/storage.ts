@@ -1,4 +1,4 @@
-const AUTH_TOKEN_STORAGE_KEY = "elog:auth:token";
+import { AUTH_TOKEN_STORAGE_KEY } from "@/lib/auth/constants";
 
 export function readAuthTokenFromStorage(storage: Storage): string | null {
   const token = storage.getItem(AUTH_TOKEN_STORAGE_KEY);

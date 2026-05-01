@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { AUTH_TOKEN_STORAGE_KEY } from "@/lib/auth/constants";
 import { proxyAuthTokenFromStorage } from "@/lib/auth/storageTokenProxy";
 
 function createStorageMock(token: string | null): Storage {
@@ -7,7 +8,7 @@ function createStorageMock(token: string | null): Storage {
     length: 0,
     clear() {},
     getItem(key: string) {
-      if (key !== "elog:auth:token") {
+      if (key !== AUTH_TOKEN_STORAGE_KEY) {
         return null;
       }
       return token;

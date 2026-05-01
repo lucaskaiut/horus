@@ -17,7 +17,7 @@ export default function SidebarNav() {
     <aside className="flex min-h-0 w-64 shrink-0 flex-col overflow-hidden border-r border-zinc-200 bg-white font-sans dark:border-white/10 dark:bg-slate-950">
       <div className="px-4 py-4">
         <div className="text-sm font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-          Elog
+          Horus
         </div>
       </div>
 

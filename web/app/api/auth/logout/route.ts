@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { getRequiredApiUrl } from "@/app/api/auth/_server/env";
+import { AUTH_SESSION_COOKIE_NAME } from "@/lib/auth/constants";
 
 function resolveBearer(request: Request, cookieToken: string): string {
   const header = request.headers.get("authorization")?.trim() ?? "";
@@ -18,7 +19,7 @@ function resolveBearer(request: Request, cookieToken: string): string {
 export async function POST(request: Request): Promise<Response> {
   const apiUrl = getRequiredApiUrl();
   const cookieStore = await cookies();
-  const cookieToken = cookieStore.get("elog_auth_token")?.value ?? "";
+  const cookieToken = cookieStore.get(AUTH_SESSION_COOKIE_NAME)?.value ?? "";
   const token = resolveBearer(request, cookieToken);
 
   if (token.length > 0) {
@@ -37,7 +38,7 @@ export async function POST(request: Request): Promise<Response> {
     }
   }
 
-  cookieStore.set("elog_auth_token", "", {
+  cookieStore.set(AUTH_SESSION_COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
     path: "/",

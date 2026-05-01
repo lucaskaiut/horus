@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { getRequiredApiUrl } from "@/app/api/auth/_server/env";
+import { AUTH_SESSION_COOKIE_NAME } from "@/lib/auth/constants";
 
 type UpstreamError = { message?: unknown; errors?: unknown };
 
@@ -9,7 +10,7 @@ export async function GET(request: Request): Promise<Response> {
   const apiUrl = getRequiredApiUrl();
 
   const cookieStore = await cookies();
-  const token = cookieStore.get("elog_auth_token")?.value ?? "";
+  const token = cookieStore.get(AUTH_SESSION_COOKIE_NAME)?.value ?? "";
 
   const url = new URL(request.url);
   const upstreamUrl = `${apiUrl}/logs${url.search}`;

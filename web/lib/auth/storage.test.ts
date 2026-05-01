@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { AUTH_TOKEN_STORAGE_KEY } from "@/lib/auth/constants";
 import {
   clearAuthTokenFromStorage,
   readAuthTokenFromStorage,
@@ -28,7 +29,7 @@ describe("auth storage", () => {
   });
 
   it("normaliza token vazio para null", () => {
-    const storage = createStorageMock({ "elog:auth:token": "   " });
+    const storage = createStorageMock({ [AUTH_TOKEN_STORAGE_KEY]: "   " });
     expect(readAuthTokenFromStorage(storage)).toBeNull();
   });
 
@@ -39,7 +40,7 @@ describe("auth storage", () => {
   });
 
   it("remove token", () => {
-    const storage = createStorageMock({ "elog:auth:token": "abc" });
+    const storage = createStorageMock({ [AUTH_TOKEN_STORAGE_KEY]: "abc" });
     clearAuthTokenFromStorage(storage);
     expect(readAuthTokenFromStorage(storage)).toBeNull();
   });

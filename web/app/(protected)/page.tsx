@@ -5,6 +5,7 @@ import { DashboardChartsClient } from "@/app/(protected)/_components/dashboard/d
 import { DashboardKpiCards } from "@/app/(protected)/_components/dashboard/kpi-cards";
 import { DashboardPeriodPicker } from "@/app/(protected)/_components/dashboard/period-picker";
 import { fetchLogsSummaryServer } from "@/app/(protected)/_server/fetch-logs-summary";
+import { AUTH_SESSION_COOKIE_NAME } from "@/lib/auth/constants";
 import { clampDashboardDays } from "@/lib/logs/dashboard-days";
 import { summarizeSevereTotal } from "@/lib/logs/summary-metrics";
 
@@ -47,7 +48,7 @@ export default async function Home(props: Props) {
             className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-100"
             role="status"
           >
-            Não foi possível carregar o resumo. Confirme sessão (<span className="font-mono">elog_auth_token</span>
+            Não foi possível carregar o resumo. Confirme sessão (<span className="font-mono">{AUTH_SESSION_COOKIE_NAME}</span>
             ), variável <span className="font-mono">API_URL</span> e disponibilidade do OpenSearch.
           </section>
         ) : (
