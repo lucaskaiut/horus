@@ -83,6 +83,134 @@ paths:
                     type: string
                     example: Usuário não autenticado.
   /api/logs:
+    get:
+      summary: Lista logs com filtros e paginação
+      description: >
+        Realiza busca no OpenSearch e retorna logs paginados.
+        Suporta filtros por datas, mensagem, canal, nível, entidade e exceção.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          example: 50
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [received_at, processed_at, created_at]
+          example: received_at
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+          example: desc
+        - in: query
+          name: filters[level]
+          schema:
+            type: string
+            enum: [debug, info, notice, warning, error, critical, alert, emergency]
+          example: error
+        - in: query
+          name: filters[channel]
+          schema:
+            type: string
+          example: http
+        - in: query
+          name: filters[message]
+          schema:
+            type: string
+          example: exception
+        - in: query
+          name: filters[entity_name]
+          schema:
+            type: string
+          example: order
+        - in: query
+          name: filters[entity_id]
+          schema:
+            type: string
+          example: "123"
+        - in: query
+          name: filters[has_exception]
+          schema:
+            type: boolean
+          example: true
+        - in: query
+          name: filters[received_at][from]
+          schema:
+            type: string
+            format: date
+          example: 2026-04-01
+        - in: query
+          name: filters[received_at][to]
+          schema:
+            type: string
+            format: date
+          example: 2026-04-30
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tracking_id:
+                          type: string
+                          example: 01JT18J1LQF5D6Q8XQ0Y2AZ123
+                        level:
+                          type: string
+                          example: error
+                        message:
+                          type: string
+                          example: Unexpected exception while processing order
+                        channel:
+                          type: string
+                          nullable: true
+                          example: http
+                        entity_name:
+                          type: string
+                          nullable: true
+                          example: order
+                        entity_id:
+                          type: string
+                          nullable: true
+                          example: "123"
+                        exception:
+                          type: object
+                          nullable: true
+                        received_at:
+                          type: string
+                          example: 2026-04-29T09:00:00+00:00
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 1
+                      page:
+                        type: integer
+                        example: 1
+                      per_page:
+                        type: integer
+                        example: 50
     post:
       summary: Recebe um log para processamento assíncrono
       description: >

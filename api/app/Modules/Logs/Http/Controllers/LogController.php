@@ -3,8 +3,11 @@
 namespace App\Modules\Logs\Http\Controllers;
 
 use App\Modules\Logs\Domain\Services\LogIngestService;
+use App\Modules\Logs\Domain\Services\LogSearchService;
+use App\Modules\Logs\Http\Requests\ListLogsRequest;
 use App\Modules\Logs\Http\Requests\StoreLogRequest;
 use App\Modules\Logs\Http\Resources\LogIngestResource;
+use App\Modules\Logs\Http\Resources\LogResource;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -12,7 +15,27 @@ final class LogController
 {
     public function __construct(
         private readonly LogIngestService $logIngestService,
+        private readonly LogSearchService $logSearchService,
     ) {}
+
+    public function index(ListLogsRequest $request): JsonResponse
+    {
+        $result = $this->logSearchService->search($request->validated());
+
+        /** @var array<int, array<string, mixed>> $items */
+        $items = $result['items'];
+
+        $collection = LogResource::collection($items);
+
+        return response()->json([
+            'data' => $collection->toArray($request),
+            'meta' => [
+                'total' => $result['total'],
+                'page' => $result['page'],
+                'per_page' => $result['per_page'],
+            ],
+        ], Response::HTTP_OK);
+    }
 
     public function store(StoreLogRequest $request): JsonResponse
     {
