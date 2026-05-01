@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useMemo } from "react";
 import {
   ResponsiveContainer,
@@ -26,6 +27,26 @@ const GRID_LIGHT = "#e4e4e7";
 const AXIS_TICK = "#71717a";
 
 const LEVEL_COLORS = ["#059669", "#0284c7", "#06b6d4", "#ca8a04", "#dc2626", "#be185d", "#ea580c", "#7c3aed", "#71717a"];
+
+/** Alinhado a `ValueType` do Recharts (`number | string | ReadonlyArray<…>` + `undefined`). */
+function formatRegistrosTooltip(
+  value: number | string | ReadonlyArray<number | string> | undefined,
+): [ReactNode, string] {
+  if (value == null) {
+    return ["—", "Registros"];
+  }
+  if (Array.isArray(value)) {
+    const text = value
+      .map((v) => (typeof v === "number" ? v.toLocaleString("pt-BR") : String(v)))
+      .join(", ");
+    return [text, "Registros"];
+  }
+  if (typeof value === "number") {
+    return [value.toLocaleString("pt-BR"), "Registros"];
+  }
+  const parsed = Number(value);
+  return [Number.isFinite(parsed) ? parsed.toLocaleString("pt-BR") : value, "Registros"];
+}
 
 function levelDisplayLabel(raw: string): string {
   if (raw === "(vazio)") {
@@ -120,7 +141,7 @@ export function DashboardChartsClient(props: Props) {
                   borderRadius: 12,
                   fontSize: 12,
                 }}
-                formatter={(value: number) => [value.toLocaleString("pt-BR"), "Registros"]}
+                formatter={formatRegistrosTooltip}
                 labelFormatter={(_, payload) => {
                   const raw = payload?.[0]?.payload?.rawDate;
                   return typeof raw === "string" ? `Data (${raw})` : "Data";
@@ -160,7 +181,7 @@ export function DashboardChartsClient(props: Props) {
                   borderRadius: 12,
                   fontSize: 12,
                 }}
-                formatter={(value: number) => [value.toLocaleString("pt-BR"), "Registros"]}
+                formatter={formatRegistrosTooltip}
               />
               <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: "11px" }} />
             </PieChart>
@@ -184,7 +205,7 @@ export function DashboardChartsClient(props: Props) {
                   borderRadius: 12,
                   fontSize: 12,
                 }}
-                formatter={(value: number) => [value.toLocaleString("pt-BR"), "Registros"]}
+                formatter={formatRegistrosTooltip}
                 labelFormatter={(_, payload) =>
                   typeof payload?.[0]?.payload?.raw === "string"
                     ? `Canal: ${payload[0].payload.raw}`
