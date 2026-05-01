@@ -9,4 +9,5 @@ Route::post('/register', AuthController::class.'@register');
 Route::post('/me', AuthController::class.'@me')->middleware('auth:sanctum');
 Route::post('/logout', AuthController::class.'@logout')->middleware('auth:sanctum');
 Route::get('/logs', LogController::class.'@index')->middleware(['auth:sanctum', 'throttle:120,1']);
+Route::get('/logs/summary', LogController::class.'@summary')->middleware(['auth:sanctum', 'throttle:120,1']);
 Route::post('/logs', LogController::class.'@store')->middleware(['auth:sanctum', 'throttle:60,1']);

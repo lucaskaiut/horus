@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import LogsPage from "@/app/(protected)/logs/page";
@@ -58,6 +58,56 @@ describe("LogsPage (UI)", () => {
     expect(screen.getByRole("heading", { name: "Logs" })).toBeInTheDocument();
     expect(await screen.findByText("boom")).toBeInTheDocument();
     expect(screen.getByText("order:123")).toBeInTheDocument();
+  });
+
+  it("deve abrir modal com detalhes ao clicar na linha e fechar", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            data: [
+              {
+                tracking_id: "t1",
+                level: "error",
+                message: "boom",
+                context: null,
+                entity_name: "order",
+                entity_id: "123",
+                source: "billing",
+                environment: "production",
+                channel: "http",
+                request_id: null,
+                trace_id: null,
+                user_id: null,
+                ip_address: null,
+                user_agent: null,
+                exception: { class: "RuntimeException", message: "x" },
+                received_at: "2026-04-29T09:00:00+00:00",
+                processed_at: null,
+                created_at: "2026-04-29T09:00:00+00:00",
+              },
+            ],
+            meta: { total: 1, page: 1, per_page: 50 },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+
+    render(<LogsPage />);
+    const user = userEvent.setup();
+    await screen.findByText("boom");
+
+    await user.click(screen.getByRole("row", { name: "Log t1" }));
+
+    const dialog = screen.getByRole("dialog", { name: "Detalhes do log" });
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByText("boom")).toBeInTheDocument();
+    expect(within(dialog).getByText(/RuntimeException/)).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Fechar" }));
+    expect(screen.queryByRole("dialog", { name: "Detalhes do log" })).not.toBeInTheDocument();
   });
 
   it("deve aplicar filtros e atualizar a URL", async () => {

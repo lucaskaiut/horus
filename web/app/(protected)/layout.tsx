@@ -15,9 +15,9 @@ export default async function ProtectedLayout({
   }
 
   return (
-    <div className="flex min-h-dvh bg-zinc-50 font-sans dark:bg-slate-900">
+    <div className="flex h-dvh overflow-hidden bg-zinc-50 font-sans dark:bg-slate-900">
       <SidebarNav />
-      <main className="flex min-w-0 flex-1">{children}</main>
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{children}</main>
     </div>
   );
 }

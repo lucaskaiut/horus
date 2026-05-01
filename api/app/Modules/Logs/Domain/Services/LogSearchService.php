@@ -28,34 +28,16 @@ final class LogSearchService
         $sort = (string) ($validated['sort'] ?? 'received_at');
         $order = (string) ($validated['order'] ?? 'desc');
 
-        $bool = [
-            'must' => [],
-            'filter' => [],
-            'must_not' => [],
-        ];
-
         /** @var array<string, mixed> $filters */
-        $filters = $validated['filters'] ?? [];
-        $available = $this->filterRegistry->filters();
-
-        foreach ($filters as $key => $value) {
-            if (! isset($available[$key])) {
-                continue;
-            }
-
-            $available[$key]->apply($bool, $value);
-        }
-
-        /** @var array<string, mixed> $boolQuery */
-        $boolQuery = array_filter($bool, fn ($v) => is_array($v) && $v !== []);
+        $filters = isset($validated['filters']) && is_array($validated['filters'])
+            ? $validated['filters']
+            : [];
 
         $query = [
             'from' => ($page - 1) * $perPage,
             'size' => $perPage,
             'track_total_hits' => true,
-            'query' => $boolQuery === []
-                ? ['match_all' => (object) []]
-                : ['bool' => $boolQuery],
+            'query' => AppliedLogFilters::clause($this->filterRegistry, $filters),
             'sort' => [
                 [
                     $sort => [

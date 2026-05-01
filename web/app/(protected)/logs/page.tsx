@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { fetchJsonOrThrow } from "@/lib/auth/http";
-import type { ListLogsResponse, LogLevel, LogsFilters } from "@/lib/logs/types";
+import type { ListLogsResponse, LogItem, LogLevel, LogsFilters } from "@/lib/logs/types";
+import { formatReceivedAtForDisplay } from "@/lib/logs/format-received-at";
+import { LogDetailModal } from "@/lib/logs/log-detail-modal";
+import { LogLevelBadge } from "@/lib/logs/log-level-badge";
 import { buildLogsSearchParams, parseLogsFiltersFromSearchParams } from "@/lib/logs/query";
 
 type PageState =
@@ -287,19 +290,23 @@ function LogsFiltersForm(props: {
   );
 }
 
-function LogsTable(props: { data: ListLogsResponse }) {
+function LogsTable(props: {
+  data: ListLogsResponse;
+  selectedTrackingId: string | null;
+  onSelectLog: (log: LogItem) => void;
+}) {
   return (
-    <section className="mt-4 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-950">
-      <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 text-sm dark:border-white/10">
+    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-950">
+      <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 px-4 py-3 text-sm dark:border-white/10">
         <div className="font-medium text-zinc-900 dark:text-zinc-50">Resultados</div>
         <div className="text-zinc-600 dark:text-zinc-400">
           Total: <span className="font-medium text-zinc-900 dark:text-zinc-50">{props.data.meta.total}</span>
         </div>
       </div>
 
-      <div className="overflow-auto">
+      <div className="min-h-0 flex-1 overflow-auto">
         <table className="min-w-full text-left text-sm">
-          <thead className="bg-zinc-50 text-xs text-zinc-600 dark:bg-slate-900 dark:text-zinc-300">
+          <thead className="sticky top-0 z-10 bg-zinc-50 text-xs text-zinc-600 shadow-[0_1px_0_0] shadow-zinc-200 dark:bg-slate-900 dark:text-zinc-300 dark:shadow-white/10">
             <tr>
               <th className="px-4 py-3 font-medium">Data</th>
               <th className="px-4 py-3 font-medium">Nível</th>
@@ -311,11 +318,35 @@ function LogsTable(props: { data: ListLogsResponse }) {
           </thead>
           <tbody className="divide-y divide-zinc-200 dark:divide-white/10">
             {props.data.data.map((log) => (
-              <tr key={log.tracking_id} className="text-zinc-900 dark:text-zinc-50">
+              <tr
+                key={log.tracking_id}
+                tabIndex={0}
+                aria-label={`Log ${log.tracking_id}`}
+                className={[
+                  "cursor-pointer text-zinc-900 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-inset dark:text-zinc-50 dark:focus-visible:ring-zinc-500",
+                  props.selectedTrackingId === log.tracking_id
+                    ? "bg-zinc-100 hover:bg-zinc-100 dark:bg-slate-800/90 dark:hover:bg-slate-800/90"
+                    : "hover:bg-zinc-50 dark:hover:bg-slate-900/70",
+                ].join(" ")}
+                onClick={() => props.onSelectLog(log)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    props.onSelectLog(log);
+                  }
+                }}
+              >
                 <td className="px-4 py-3 whitespace-nowrap text-zinc-700 dark:text-zinc-200">
-                  {log.received_at ?? "—"}
+                  <span
+                    suppressHydrationWarning
+                    title={log.received_at ?? undefined}
+                  >
+                    {formatReceivedAtForDisplay(log.received_at)}
+                  </span>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap">{log.level ?? "—"}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <LogLevelBadge level={log.level} />
+                </td>
                 <td className="px-4 py-3 whitespace-nowrap text-zinc-700 dark:text-zinc-200">
                   {log.channel ?? "—"}
                 </td>
@@ -356,6 +387,7 @@ export default function LogsPage() {
   const [filtersDraft, setFiltersDraft] = useState<LogsFilters>(initialFilters);
   const [state, setState] = useState<PageState>({ status: "idle" });
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [detailLog, setDetailLog] = useState<LogItem | null>(null);
 
   const page = safeInt(searchParams?.get("page") ?? null, 1);
   const per_page = safeInt(searchParams?.get("per_page") ?? null, 50);
@@ -426,6 +458,23 @@ export default function LogsPage() {
     };
   }, [initialFilters, order, page, per_page, sort]);
 
+  const detailTrackingId = detailLog?.tracking_id ?? null;
+
+  useEffect(() => {
+    if (state.status !== "ready" || detailTrackingId === null) {
+      return;
+    }
+    const stillHere = state.data.data.some((row) => row.tracking_id === detailTrackingId);
+    if (!stillHere) {
+      const handle = window.setTimeout(() => {
+        setDetailLog(null);
+      }, 0);
+      return () => window.clearTimeout(handle);
+    }
+
+    return undefined;
+  }, [detailTrackingId, state]);
+
   function applyFilters(): void {
     const params = buildLogsSearchParams({
       page: 1,
@@ -451,9 +500,9 @@ export default function LogsPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col bg-zinc-50 px-6 py-6 font-sans dark:bg-slate-900">
-      <div className="mx-auto w-full max-w-6xl">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-950">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-zinc-50 px-6 py-6 font-sans dark:bg-slate-900">
+      <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-4">
+        <section className="shrink-0 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-950">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
@@ -491,15 +540,23 @@ export default function LogsPage() {
         </LogsFiltersDrawer>
 
         {state.status === "error" ? (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/20 dark:bg-red-950/40 dark:text-red-200">
+          <div className="shrink-0 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/20 dark:bg-red-950/40 dark:text-red-200">
             {state.message}
           </div>
         ) : null}
 
-        {state.status === "ready" ? <LogsTable data={state.data} /> : null}
+        {state.status === "ready" ? (
+          <LogsTable
+            data={state.data}
+            selectedTrackingId={detailTrackingId}
+            onSelectLog={setDetailLog}
+          />
+        ) : null}
+
+        <LogDetailModal log={detailLog} onClose={() => setDetailLog(null)} />
 
         {state.status === "ready" ? (
-          <section className="mt-4 flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-950 md:flex-row md:items-center md:justify-between">
+          <section className="shrink-0 flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-950 md:flex-row md:items-center md:justify-between">
             <div className="text-sm text-zinc-600 dark:text-zinc-400">
               Página{" "}
               <span className="font-medium text-zinc-900 dark:text-zinc-50">
@@ -589,7 +646,7 @@ export default function LogsPage() {
         ) : null}
 
         {state.status === "loading" || state.status === "idle" ? (
-          <div className="mt-4 rounded-2xl border border-zinc-200 bg-white px-4 py-10 text-center text-sm text-zinc-600 shadow-sm dark:border-white/10 dark:bg-slate-950 dark:text-zinc-400">
+          <div className="flex min-h-0 flex-1 items-center justify-center rounded-2xl border border-zinc-200 bg-white px-4 py-10 text-center text-sm text-zinc-600 shadow-sm dark:border-white/10 dark:bg-slate-950 dark:text-zinc-400">
             Carregando…
           </div>
         ) : null}

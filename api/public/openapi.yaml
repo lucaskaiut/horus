@@ -409,6 +409,108 @@ paths:
         "422":
           description: Erro de validação
 
+  /api/logs/summary:
+    get:
+      summary: Agregações para dashboard
+      description: >
+        Busca única (`size` 0) com agregações term e histogram sobre o índice `logs-*`.
+        Sobrescreve o intervalo em `filters.received_at` com a janela de últimos `histogram_days` (UTC)
+        combinada aos demais filtros enviados.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: histogram_days
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 90
+          example: 14
+          description: Largura em dias do histograma diário e do filtro de recebimento.
+        - in: query
+          name: filters[level]
+          schema:
+            type: string
+            enum: [debug, info, notice, warning, error, critical, alert, emergency]
+        - in: query
+          name: filters[channel]
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      with_exception_count:
+                        type: integer
+                      period:
+                        type: object
+                        properties:
+                          from:
+                            type: string
+                            format: date
+                          to:
+                            type: string
+                            format: date
+                          histogram_days:
+                            type: integer
+                      by_level:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            count:
+                              type: integer
+                      by_channel:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            count:
+                              type: integer
+                      by_source:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            count:
+                              type: integer
+                      by_environment:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            count:
+                              type: integer
+                      histogram:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                              example: "2026-04-01"
+                            count:
+                              type: integer
+        "401":
+          description: Não autenticado
+
 components:
   securitySchemes:
     bearerAuth:
