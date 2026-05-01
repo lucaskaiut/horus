@@ -59,54 +59,6 @@ paths:
                         example: johndoe@example.com
         "422":
           description: Erro de validação
-  /api/register:
-    post:
-      summary: Register
-      description: >
-        Cria um usuário local.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name, email, password, password_confirmation]
-              properties:
-                name:
-                  type: string
-                  example: John Doen
-                email:
-                  type: string
-                  format: email
-                  example: johndoe@example.com
-                password:
-                  type: string
-                  example: "********"
-                password_confirmation:
-                  type: string
-                  example: "********"
-      responses:
-        "201":
-          description: Created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        example: "1"
-                      name:
-                        type: string
-                        example: John Doen
-                      email:
-                        type: string
-                        example: johndoe@example.com
-        "422":
-          description: Erro de validação
   /api/me:
     post:
       summary: Valida sessão/token

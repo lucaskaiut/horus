@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { performLogin, verifyAuthentication } from "@/lib/auth/session";
 
@@ -13,12 +12,8 @@ type FormState =
 
 export default function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [form, setForm] = useState({ email: "", password: "" });
   const [state, setState] = useState<FormState>({ status: "idle" });
-
-  const registrationSuccess =
-    searchParams.get("registered") === "1" || searchParams.get("registered") === "true";
 
   const canSubmit = useMemo(() => {
     const hasLogin = form.email.trim().length > 0;
@@ -87,15 +82,6 @@ export default function LoginForm() {
           </p>
         </div>
 
-        {registrationSuccess ? (
-          <div
-            role="status"
-            className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-500/25 dark:bg-emerald-950/35 dark:text-emerald-100"
-          >
-            Cadastro concluído com sucesso. Entre com seu e-mail e senha para continuar.
-          </div>
-        ) : null}
-
         <form onSubmit={onSubmit} className="mt-8 space-y-5">
           <div className="space-y-2">
             <label className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
@@ -138,13 +124,6 @@ export default function LoginForm() {
           >
             {state.status === "submitting" ? "Entrando…" : "Entrar"}
           </button>
-
-          <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-            Novo aqui?{" "}
-            <Link href="/register" className="font-medium text-slate-950 underline dark:text-zinc-100">
-              Criar conta
-            </Link>
-          </p>
         </form>
       </div>
     </div>

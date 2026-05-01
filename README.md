@@ -113,7 +113,7 @@ Este repositório é um monólito **API Laravel** + **frontend Next.js (BFF)** +
 Copie a partir de `api/.env.example` e ajuste no ambiente de deploy.
 
 - **Obrigatórias de aplicação:** `APP_KEY` (gerar com `php artisan key:generate`), `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` (URL pública da API, ex.: `https://api.seudominio.com`).
-- **Banco:** `DB_*` — necessário para login/registro Sanctum e testes que usam usuário real.
+- **Banco:** `DB_*` — necessário para login Sanctum e testes com usuário real (não há cadastro público; crie usuários por migração/seed ou tinker).
 - **Redis (recomendado em produção):** `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` se aplicável; alinhar `QUEUE_CONNECTION`, `CACHE_STORE`, `SESSION_DRIVER` ao Redis (como no `docker-compose` de referência).
 - **OpenSearch:** `OPENSEARCH_URL` (ex.: `https://opensearch.sua-rede-interna:9200`), `OPENSEARCH_TIMEOUT`.
 - **Auth externo (se usado):** `AUTH_SERVER_URL`, `AUTH_SERVER_TIMEOUT` — conforme `config/services.php`.

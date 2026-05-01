@@ -5,7 +5,6 @@ use App\Modules\Logs\Http\Controllers\LogController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', AuthController::class.'@login');
-Route::post('/register', AuthController::class.'@register');
 Route::post('/me', AuthController::class.'@me')->middleware('auth:sanctum');
 Route::post('/logout', AuthController::class.'@logout')->middleware('auth:sanctum');
 Route::get('/logs', LogController::class.'@index')->middleware(['auth:sanctum', 'throttle:120,1']);

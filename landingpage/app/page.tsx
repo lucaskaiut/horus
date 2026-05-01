@@ -98,7 +98,7 @@ export default function Home() {
               },
               {
                 title: "Autenticação integrada",
-                text: "Cadastro e login com canal interno e tokens Sanctum; a camada web trata da sessão sem expor credenciais ao JavaScript da página.",
+                text: "Login com canal interno e tokens Sanctum; contas são criadas fora da aplicação (sem cadastro público). A web mantém a sessão em cookie HttpOnly.",
               },
               {
                 title: "Escala de dados de teste",

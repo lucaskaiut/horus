@@ -7,8 +7,6 @@ import LoginPage from "@/app/(public)/login/page";
 const replaceMock = vi.fn();
 const refreshMock = vi.fn();
 
-const searchParamsGetMock = vi.fn(() => null);
-
 type LoginBody = { channel: "internal"; payload: { email: string; password: string } };
 
 const performLoginMock = vi.fn<(body: LoginBody) => Promise<unknown>>();
@@ -16,9 +14,6 @@ const verifyAuthenticationMock = vi.fn<() => Promise<{ status: string }>>();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: replaceMock, refresh: refreshMock }),
-  useSearchParams: () => ({
-    get: searchParamsGetMock,
-  }),
 }));
 
 vi.mock("@/lib/auth/session", () => ({
@@ -30,8 +25,6 @@ describe("LoginPage (UI)", () => {
   beforeEach(() => {
     replaceMock.mockReset();
     refreshMock.mockReset();
-    searchParamsGetMock.mockReset();
-    searchParamsGetMock.mockReturnValue(null);
     performLoginMock.mockReset();
     verifyAuthenticationMock.mockReset();
     verifyAuthenticationMock.mockResolvedValue({ status: "unauthenticated" });
@@ -107,18 +100,4 @@ describe("LoginPage (UI)", () => {
       await screen.findByText("Não foi possível autenticar. Verifique suas credenciais."),
     ).toBeInTheDocument();
   });
-
-  it("deve exibir link para criar conta", () => {
-    render(<LoginPage />);
-    expect(screen.getByRole("link", { name: "Criar conta" })).toHaveAttribute("href", "/register");
-  });
-
-  it("deve exibir feedback de cadastro quando query registered estiver definida", () => {
-    searchParamsGetMock.mockImplementation((key: string) => (key === "registered" ? "1" : null));
-    render(<LoginPage />);
-    expect(
-      screen.getByText(/Cadastro concluído com sucesso/i),
-    ).toBeInTheDocument();
-  });
 });
-
