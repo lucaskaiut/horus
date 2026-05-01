@@ -9,12 +9,15 @@ import { AUTH_SESSION_COOKIE_NAME } from "@/lib/auth/constants";
 import { clampDashboardDays } from "@/lib/logs/dashboard-days";
 import { summarizeSevereTotal } from "@/lib/logs/summary-metrics";
 
+type DashboardSearchParams = { days?: string };
+
 type Props = {
-  searchParams?: Promise<{ days?: string }>;
+  searchParams?: Promise<DashboardSearchParams>;
 };
 
 export default async function Home(props: Props) {
-  const sp = await (props.searchParams ?? Promise.resolve({}));
+  const emptySearchParams: Promise<DashboardSearchParams> = Promise.resolve({});
+  const sp = await (props.searchParams ?? emptySearchParams);
   const days = clampDashboardDays(sp.days ?? undefined);
 
   const query = new URLSearchParams({ histogram_days: String(days) });
