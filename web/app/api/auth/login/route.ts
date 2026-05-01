@@ -27,14 +27,12 @@ export async function POST(request: Request): Promise<Response> {
   const user = sanitizeUser({ name: json?.data?.name, email: json?.data?.email });
 
   /**
-   * BFF: retornamos apenas o necessário para o frontend (token + user minimal),
-   * evitando vazar payloads adicionais do upstream.
+   * BFF: sessão ficam apenas no cookie HttpOnly; não retornamos o token ao cliente.
    */
-  const response = NextResponse.json({ data: { token, user } }, { status: 201 });
+  const response = NextResponse.json({ data: { user } }, { status: 201 });
 
   /**
-   * Proxy (Next 16): como `proxy.ts` não enxerga `localStorage`, usamos cookie HttpOnly
-   * como sinal otimista de “tem token”. O guard client-side continua validando via `/me`.
+   * Cookie HttpOnly: sinal otimista de “tem token” para o proxy; `/me` valida de fato.
    *
    * No Next.js 16+, `cookies()` é assíncrono e precisa ser aguardado antes de `.set`.
    */

@@ -2,9 +2,13 @@
 
 namespace App\Modules\Auth\Http\Controllers;
 
+use App\Models\User;
 use App\Modules\Auth\Domain\Services\AuthService;
+use App\Modules\Auth\Domain\Services\RegisterUserService;
 use App\Modules\Auth\Http\Requests\LoginRequest;
+use App\Modules\Auth\Http\Requests\RegisterRequest;
 use App\Modules\Auth\Http\Resources\AuthResource;
+use App\Modules\Auth\Http\Resources\RegisteredUserResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,6 +17,7 @@ final class AuthController
 {
     public function __construct(
         private readonly AuthService $authService,
+        private readonly RegisterUserService $registerUserService,
     ) {}
 
     public function login(LoginRequest $request): JsonResponse
@@ -20,9 +25,8 @@ final class AuthController
         $data = $request->validated();
 
         $result = $this->authService->login(
-            login: $data['login'],
-            password: $data['password'],
-            google2faValidation: $data['google2faValidation'] ?? null,
+            (string) $data['channel'],
+            (array) $data['payload'],
         );
 
         $resource = (new AuthResource($result))->toArray($request);
@@ -32,15 +36,39 @@ final class AuthController
 
     public function me(Request $request): JsonResponse
     {
-        /** @var array{id:?string,name:?string,email:?string}|null $authServerUser */
-        $authServerUser = $request->attributes->get('auth_server_user');
-
         return response()->json([
             'message' => 'Usuário logado.',
             'data' => [
-                'name' => (string) data_get($authServerUser, 'name', ''),
-                'email' => (string) data_get($authServerUser, 'email', ''),
+                'name' => (string) data_get($request->user(), 'name', ''),
+                'email' => (string) data_get($request->user(), 'email', ''),
             ],
         ], Response::HTTP_OK);
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $this->authService->logout($user);
+
+        return response()->json([
+            'message' => 'Sessão encerrada.',
+            'data' => ['ok' => true],
+        ], Response::HTTP_OK);
+    }
+
+    public function register(RegisterRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+
+        $result = $this->registerUserService->register(
+            name: (string) $data['name'],
+            email: (string) $data['email'],
+            password: (string) $data['password'],
+        );
+
+        $resource = (new RegisteredUserResource($result))->toArray($request);
+
+        return response()->json(['data' => $resource], Response::HTTP_CREATED);
     }
 }

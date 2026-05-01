@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Logs;
 
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -9,19 +11,23 @@ class ListLogsTest extends TestCase
 {
     public function test_list_logs_returns_paginated_data_and_applies_filters(): void
     {
-        config()->set('services.auth_server.base_url', 'https://auth.test');
-        config()->set('services.auth_server.timeout', 5);
         config()->set('services.opensearch.url', 'https://os.test');
         config()->set('services.opensearch.timeout', 5);
 
+        try {
+            DB::connection()->getPdo();
+        } catch (\Throwable) {
+            $this->markTestSkipped('Driver de banco indisponível para testes com Sanctum.');
+        }
+
+        $user = User::query()->create([
+            'name' => 'API Client',
+            'email' => 'api@example.com',
+            'password' => 'password',
+        ]);
+        $token = $user->createToken('api')->plainTextToken;
+
         Http::fake([
-            'https://auth.test/auth/me' => Http::response([
-                'ok' => true,
-                'content' => [
-                    'name' => 'API Client',
-                    'email' => 'api@example.com',
-                ],
-            ], 200),
             'https://os.test/logs-*/_search' => Http::response([
                 'hits' => [
                     'total' => ['value' => 1],
@@ -49,7 +55,7 @@ class ListLogsTest extends TestCase
         ]);
 
         $response = $this->getJson('/api/logs?filters[level]=error&filters[channel]=http&filters[message]=Unexpected&filters[received_at][from]=2026-04-01&filters[received_at][to]=2026-04-30&page=1&per_page=20&sort=received_at&order=desc', [
-            'Authorization' => 'Bearer valid-token',
+            'Authorization' => 'Bearer '.$token,
         ]);
 
         $response->assertOk();
@@ -105,19 +111,23 @@ class ListLogsTest extends TestCase
 
     public function test_list_logs_uses_match_all_when_no_filters_are_provided(): void
     {
-        config()->set('services.auth_server.base_url', 'https://auth.test');
-        config()->set('services.auth_server.timeout', 5);
         config()->set('services.opensearch.url', 'https://os.test');
         config()->set('services.opensearch.timeout', 5);
 
+        try {
+            DB::connection()->getPdo();
+        } catch (\Throwable) {
+            $this->markTestSkipped('Driver de banco indisponível para testes com Sanctum.');
+        }
+
+        $user = User::query()->create([
+            'name' => 'API Client',
+            'email' => 'api@example.com',
+            'password' => 'password',
+        ]);
+        $token = $user->createToken('api')->plainTextToken;
+
         Http::fake([
-            'https://auth.test/auth/me' => Http::response([
-                'ok' => true,
-                'content' => [
-                    'name' => 'API Client',
-                    'email' => 'api@example.com',
-                ],
-            ], 200),
             'https://os.test/logs-*/_search' => Http::response([
                 'hits' => [
                     'total' => ['value' => 0],
@@ -127,7 +137,7 @@ class ListLogsTest extends TestCase
         ]);
 
         $response = $this->getJson('/api/logs?page=1&per_page=20&sort=received_at&order=desc', [
-            'Authorization' => 'Bearer valid-token',
+            'Authorization' => 'Bearer '.$token,
         ]);
 
         $response->assertOk();

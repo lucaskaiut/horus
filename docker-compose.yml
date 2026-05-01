@@ -1,4 +1,21 @@
 services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      - MYSQL_DATABASE=laravel
+      - MYSQL_USER=laravel
+      - MYSQL_PASSWORD=laravel
+      - MYSQL_ROOT_PASSWORD=laravel
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u laravel -plaravel --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
   redis:
     image: redis:7-alpine
     ports:
@@ -66,6 +83,8 @@ services:
     ports:
       - "8000:8000"
     depends_on:
+      mysql:
+        condition: service_healthy
       redis:
         condition: service_healthy
       opensearch:
@@ -90,6 +109,8 @@ services:
     volumes:
       - ./api:/var/www/html/api
     depends_on:
+      mysql:
+        condition: service_healthy
       redis:
         condition: service_healthy
       opensearch:
@@ -118,3 +139,4 @@ volumes:
   web_node_modules:
   opensearch_data:
   redis_data:
+  mysql_data:

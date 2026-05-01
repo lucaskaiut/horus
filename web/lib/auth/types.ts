@@ -1,7 +1,8 @@
+export type LoginChannel = "internal";
+
 export type LoginRequestBody = {
-  login: string;
-  password: string;
-  google2faValidation: string | null;
+  channel: "internal";
+  payload: { email: string; password: string };
 };
 
 export type AuthenticatedUser = {
@@ -10,7 +11,6 @@ export type AuthenticatedUser = {
 };
 
 export type LoginSuccess = {
-  token: string;
   user: AuthenticatedUser;
 };
 

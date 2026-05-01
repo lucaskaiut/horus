@@ -21,7 +21,6 @@ final class LogController
     public function index(ListLogsRequest $request): JsonResponse
     {
         $result = $this->logSearchService->search($request->validated());
-
         /** @var array<int, array<string, mixed>> $items */
         $items = $result['items'];
 

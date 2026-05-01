@@ -2,39 +2,34 @@
 
 namespace App\Modules\Auth\Domain\Services;
 
+use App\Models\User;
 use Illuminate\Http\Client\RequestException;
-use Illuminate\Support\Facades\Http;
+use Laravel\Sanctum\PersonalAccessToken;
 
 final class AuthService
 {
+    public function __construct(
+        private readonly LoginChannelRegistry $loginChannelRegistry,
+    ) {}
+
     /**
      * @return array{token:string,name:string,email:string}
      *
      * @throws RequestException
      */
-    public function login(string $login, string $password, ?string $google2faValidation): array
+    public function login(string $channel, array $payload): array
     {
-        $baseUrl = (string) config('services.auth_server.base_url', '');
-        $timeout = (int) config('services.auth_server.timeout', 5);
+        $channelHandler = $this->loginChannelRegistry->get($channel);
 
-        $response = Http::baseUrl($baseUrl)
-            ->timeout($timeout)
-            ->acceptJson()
-            ->asJson()
-            ->post('/auth', [
-                'login' => $login,
-                'password' => $password,
-                'google2faValidation' => $google2faValidation,
-            ])
-            ->throw();
-
-        $json = $response->json();
-
-        return [
-            'token' => (string) data_get($json, 'content.token', ''),
-            'name' => (string) data_get($json, 'content.name', ''),
-            'email' => (string) data_get($json, 'content.email', ''),
-        ];
+        return $channelHandler->login($payload);
     }
 
+    public function logout(User $user): void
+    {
+        $token = $user->currentAccessToken();
+
+        if ($token instanceof PersonalAccessToken) {
+            $token->delete();
+        }
+    }
 }

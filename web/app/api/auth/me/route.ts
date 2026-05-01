@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 import { getRequiredApiUrl } from "@/app/api/auth/_server/env";
 import { sanitizeUser } from "@/app/api/auth/_server/sanitize";
@@ -7,7 +8,15 @@ type ApiMeResponse = { data?: { name?: unknown; email?: unknown } };
 
 export async function POST(request: Request): Promise<Response> {
   const apiUrl = getRequiredApiUrl();
-  const authorization = request.headers.get("authorization") ?? "";
+  const cookieStore = await cookies();
+  const cookieToken = cookieStore.get("elog_auth_token")?.value ?? "";
+  const headerAuth = request.headers.get("authorization")?.trim() ?? "";
+  const authorization =
+    headerAuth.length > 0
+      ? headerAuth
+      : cookieToken.trim().length > 0
+        ? `Bearer ${cookieToken.trim()}`
+        : "";
 
   const upstream = await fetch(`${apiUrl}/me`, {
     method: "POST",

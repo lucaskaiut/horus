@@ -1,3 +1,6 @@
+import SidebarNavItems from "@/app/(protected)/_components/SidebarNavItems";
+import SidebarUserPanel from "@/app/(protected)/_components/SidebarUserPanel";
+
 type MenuItem = {
   id: string;
   label: string;
@@ -9,18 +12,21 @@ const ITEMS: MenuItem[] = [
   { id: "logs", label: "Logs", href: "/logs" },
 ];
 
-import SidebarNavItems from "@/app/(protected)/_components/SidebarNavItems";
-
 export default function SidebarNav() {
   return (
-    <aside className="w-64 shrink-0 border-r border-zinc-200 bg-white font-sans dark:border-white/10 dark:bg-slate-950">
+    <aside className="flex min-h-dvh w-64 shrink-0 flex-col border-r border-zinc-200 bg-white font-sans dark:border-white/10 dark:bg-slate-950">
       <div className="px-4 py-4">
         <div className="text-sm font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
           Elog
         </div>
       </div>
 
-      <SidebarNavItems items={ITEMS} />
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <SidebarNavItems items={ITEMS} />
+        </div>
+        <SidebarUserPanel />
+      </div>
     </aside>
   );
 }

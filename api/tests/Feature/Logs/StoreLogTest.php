@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Logs;
 
+use App\Models\User;
 use App\Modules\Logs\Jobs\ProcessIncomingLogJob;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
@@ -12,18 +14,18 @@ class StoreLogTest extends TestCase
 {
     public function test_store_log_accepts_payload_and_dispatches_job(): void
     {
-        config()->set('services.auth_server.base_url', 'https://auth.test');
-        config()->set('services.auth_server.timeout', 5);
+        try {
+            DB::connection()->getPdo();
+        } catch (\Throwable) {
+            $this->markTestSkipped('Driver de banco indisponível para testes com Sanctum.');
+        }
 
-        Http::fake([
-            'https://auth.test/auth/me' => Http::response([
-                'ok' => true,
-                'content' => [
-                    'name' => 'API Client',
-                    'email' => 'api@example.com',
-                ],
-            ], 200),
+        $user = User::query()->create([
+            'name' => 'API Client',
+            'email' => 'api@example.com',
+            'password' => 'password',
         ]);
+        $token = $user->createToken('api')->plainTextToken;
 
         Queue::fake();
 
@@ -49,7 +51,7 @@ class StoreLogTest extends TestCase
                 'stack_trace' => 'stack trace content',
             ],
         ], [
-            'Authorization' => 'Bearer valid-token',
+            'Authorization' => 'Bearer '.$token,
             'User-Agent' => 'FeatureTestAgent/1.0',
         ]);
 
@@ -65,11 +67,7 @@ class StoreLogTest extends TestCase
         $trackingId = (string) $response->json('tracking_id');
         $this->assertTrue(Str::isUlid($trackingId));
 
-        Http::assertSent(function ($request) {
-            return $request->url() === 'https://auth.test/auth/me'
-                && $request->method() === 'GET'
-                && $request->hasHeader('Authorization', 'Bearer valid-token');
-        });
+        Http::assertNothingSent();
 
         Queue::assertPushed(ProcessIncomingLogJob::class, function (ProcessIncomingLogJob $job) use ($trackingId) {
             return $job->queue === 'logs'
@@ -90,18 +88,20 @@ class StoreLogTest extends TestCase
 
     public function test_store_log_returns_validation_error_when_entity_pair_is_incomplete(): void
     {
-        config()->set('services.auth_server.base_url', 'https://auth.test');
-        config()->set('services.auth_server.timeout', 5);
+        try {
+            DB::connection()->getPdo();
+        } catch (\Throwable) {
+            $this->markTestSkipped('Driver de banco indisponível para testes com Sanctum.');
+        }
 
         Queue::fake();
-        Http::fake([
-            'https://auth.test/auth/me' => Http::response([
-                'content' => [
-                    'name' => 'API Client',
-                    'email' => 'api@example.com',
-                ],
-            ], 200),
+
+        $user = User::query()->create([
+            'name' => 'API Client',
+            'email' => 'api@example.com',
+            'password' => 'password',
         ]);
+        $token = $user->createToken('api')->plainTextToken;
 
         $response = $this->postJson('/api/logs', [
             'level' => 'info',
@@ -110,13 +110,13 @@ class StoreLogTest extends TestCase
             'source' => 'billing-api',
             'environment' => 'production',
         ], [
-            'Authorization' => 'Bearer valid-token',
+            'Authorization' => 'Bearer '.$token,
         ]);
 
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors(['entity_name']);
 
         Queue::assertNothingPushed();
-        Http::assertSentCount(1);
+        Http::assertNothingSent();
     }
 }

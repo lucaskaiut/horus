@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 use Tests\TestCase;
 
-class MeTest extends TestCase
+class LogoutTest extends TestCase
 {
-    public function test_me_returns_ok_when_sanctum_token_is_valid(): void
+    public function test_logout_revokes_current_token(): void
     {
         try {
             DB::connection()->getPdo();
@@ -18,27 +18,28 @@ class MeTest extends TestCase
         }
 
         $user = User::query()->create([
-            'name' => 'John Doen',
-            'email' => 'johndoe@example.com',
+            'name' => 'John Logout',
+            'email' => 'logout@example.com',
             'password' => 'password',
         ]);
         $token = $user->createToken('api')->plainTextToken;
 
-        $response = $this->postJson('/api/me', [], [
+        $response = $this->postJson('/api/logout', [], [
             'Authorization' => 'Bearer '.$token,
         ]);
 
         $response->assertOk();
         $response->assertJson([
-            'message' => 'Usuário logado.',
-            'data' => [
-                'name' => 'John Doen',
-                'email' => 'johndoe@example.com',
-            ],
+            'message' => 'Sessão encerrada.',
+            'data' => ['ok' => true],
         ]);
+
+        $this->postJson('/api/me', [], [
+            'Authorization' => 'Bearer '.$token,
+        ])->assertStatus(Response::HTTP_UNAUTHORIZED);
     }
 
-    public function test_me_returns_unauthorized_when_sanctum_token_is_invalid(): void
+    public function test_logout_requires_authentication(): void
     {
         try {
             DB::connection()->getPdo();
@@ -46,13 +47,8 @@ class MeTest extends TestCase
             $this->markTestSkipped('Driver de banco indisponível para testes com Sanctum.');
         }
 
-        $response = $this->postJson('/api/me', [], [
-            'Authorization' => 'Bearer invalid-token',
-        ]);
+        $response = $this->postJson('/api/logout');
 
         $response->assertStatus(Response::HTTP_UNAUTHORIZED);
-        $response->assertJson([
-            'message' => 'Usuário não autenticado.',
-        ]);
     }
 }

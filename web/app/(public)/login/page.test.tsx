@@ -5,26 +5,33 @@ import userEvent from "@testing-library/user-event";
 import LoginPage from "@/app/(public)/login/page";
 
 const replaceMock = vi.fn();
+const refreshMock = vi.fn();
 
-type LoginBody = { login: string; password: string; google2faValidation: string | null };
+const searchParamsGetMock = vi.fn(() => null);
 
-const performLoginMock = vi.fn<
-  (storage: Storage, body: LoginBody) => Promise<unknown>
->();
-const verifyAuthenticationMock = vi.fn<(storage: Storage) => Promise<{ status: string }>>();
+type LoginBody = { channel: "internal"; payload: { email: string; password: string } };
+
+const performLoginMock = vi.fn<(body: LoginBody) => Promise<unknown>>();
+const verifyAuthenticationMock = vi.fn<() => Promise<{ status: string }>>();
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: replaceMock }),
+  useRouter: () => ({ replace: replaceMock, refresh: refreshMock }),
+  useSearchParams: () => ({
+    get: searchParamsGetMock,
+  }),
 }));
 
 vi.mock("@/lib/auth/session", () => ({
-  performLogin: (...args: unknown[]) => performLoginMock(...(args as [Storage, LoginBody])),
-  verifyAuthentication: (...args: unknown[]) => verifyAuthenticationMock(...(args as [Storage])),
+  performLogin: (...args: unknown[]) => performLoginMock(...(args as [LoginBody])),
+  verifyAuthentication: (...args: unknown[]) => verifyAuthenticationMock(...args),
 }));
 
 describe("LoginPage (UI)", () => {
   beforeEach(() => {
     replaceMock.mockReset();
+    refreshMock.mockReset();
+    searchParamsGetMock.mockReset();
+    searchParamsGetMock.mockReturnValue(null);
     performLoginMock.mockReset();
     verifyAuthenticationMock.mockReset();
     verifyAuthenticationMock.mockResolvedValue({ status: "unauthenticated" });
@@ -68,18 +75,19 @@ describe("LoginPage (UI)", () => {
     render(<LoginPage />);
     const user = userEvent.setup();
 
-    performLoginMock.mockResolvedValue({ token: "t", user: { name: "A", email: "a@a.com" } });
+    performLoginMock.mockResolvedValue({ user: { name: "A", email: "a@a.com" } });
 
     await user.type(screen.getByPlaceholderText("seu@email.com"), "johndoe@example.com");
     await user.type(screen.getByPlaceholderText("••••••••"), "secret");
     await user.click(screen.getByRole("button", { name: "Entrar" }));
 
     expect(performLoginMock).toHaveBeenCalledTimes(1);
-    expect(performLoginMock.mock.calls[0]?.[0]).toBe(window.localStorage);
-    expect(performLoginMock.mock.calls[0]?.[1]).toEqual({
-      login: "johndoe@example.com",
-      password: "secret",
-      google2faValidation: null,
+    expect(performLoginMock.mock.calls[0]?.[0]).toEqual({
+      channel: "internal",
+      payload: {
+        email: "johndoe@example.com",
+        password: "secret",
+      },
     });
 
     expect(replaceMock).toHaveBeenCalledWith("/");
@@ -97,6 +105,19 @@ describe("LoginPage (UI)", () => {
 
     expect(
       await screen.findByText("Não foi possível autenticar. Verifique suas credenciais."),
+    ).toBeInTheDocument();
+  });
+
+  it("deve exibir link para criar conta", () => {
+    render(<LoginPage />);
+    expect(screen.getByRole("link", { name: "Criar conta" })).toHaveAttribute("href", "/register");
+  });
+
+  it("deve exibir feedback de cadastro quando query registered estiver definida", () => {
+    searchParamsGetMock.mockImplementation((key: string) => (key === "registered" ? "1" : null));
+    render(<LoginPage />);
+    expect(
+      screen.getByText(/Cadastro concluído com sucesso/i),
     ).toBeInTheDocument();
   });
 });

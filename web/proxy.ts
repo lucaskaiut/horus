@@ -8,14 +8,14 @@ function hasAuthCookie(request: NextRequest): boolean {
 
 export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
-  const isLoginRoute = pathname === "/login";
+  const isAuthPage = pathname === "/login" || pathname === "/register";
   const isAuthed = hasAuthCookie(request);
 
-  if (isLoginRoute && isAuthed) {
+  if (isAuthPage && isAuthed) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  if (!isLoginRoute && !isAuthed) {
+  if (!isAuthPage && !isAuthed) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -32,6 +32,6 @@ export function proxy(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ["/login", "/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/login", "/register", "/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
 

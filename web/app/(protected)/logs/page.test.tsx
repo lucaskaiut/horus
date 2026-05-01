@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import LogsPage from "@/app/(protected)/logs/page";
@@ -86,6 +86,83 @@ describe("LogsPage (UI)", () => {
     expect(url).toContain("/logs?");
     expect(url).toContain("filters%5Bmessage%5D=timeout");
     expect(url).toContain("filters%5Blevel%5D=error");
+  });
+
+  it("deve navegar para próxima página", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            data: [],
+            meta: { total: 120, page: 1, per_page: 50 },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+
+    render(<LogsPage />);
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Próxima" }));
+
+    expect(replaceMock).toHaveBeenCalledTimes(1);
+    const url = replaceMock.mock.calls[0]?.[0] as string;
+    expect(url).toContain("page=2");
+    expect(url).toContain("per_page=50");
+  });
+
+  it("deve navegar ao clicar no número da página", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            data: [],
+            meta: { total: 260, page: 1, per_page: 50 },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+
+    render(<LogsPage />);
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "3" }));
+
+    expect(replaceMock).toHaveBeenCalledTimes(1);
+    const url = replaceMock.mock.calls[0]?.[0] as string;
+    expect(url).toContain("page=3");
+  });
+
+  it("deve alterar itens por página e resetar página para 1", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              data: [],
+              meta: { total: 120, page: 3, per_page: 50 },
+            }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          ),
+        ),
+      ),
+    );
+
+    useSearchParamsMock.mockReturnValue(new URLSearchParams("page=3&per_page=50&sort=received_at&order=desc"));
+
+    render(<LogsPage />);
+    const select = await screen.findByRole("combobox", { name: "Itens por página" });
+    fireEvent.change(select, { target: { value: "20" } });
+
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledTimes(1));
+    const url = replaceMock.mock.calls[0]?.[0] as string;
+    expect(url).toContain("page=1");
+    expect(url).toContain("per_page=20");
   });
 });
 

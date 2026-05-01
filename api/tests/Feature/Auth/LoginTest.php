@@ -2,53 +2,65 @@
 
 namespace Tests\Feature\Auth;
 
-use Illuminate\Support\Facades\Http;
+use App\Modules\Auth\Domain\Contracts\LoginChannel;
+use App\Modules\Auth\Domain\Services\LoginChannelRegistry;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class LoginTest extends TestCase
 {
-    public function test_login_proxies_to_auth_server_and_returns_token_name_email(): void
+    public function test_login_with_channel_internal_uses_sanctum_token_and_does_not_proxy(): void
     {
-        config()->set('services.auth_server.base_url', 'https://auth.test');
-        config()->set('services.auth_server.timeout', 5);
+        $registry = new LoginChannelRegistry([
+            new class implements LoginChannel
+            {
+                public function key(): string
+                {
+                    return 'internal';
+                }
 
-        Http::fake([
-            'https://auth.test/auth' => Http::response([
-                'success' => true,
-                'message' => 'OK',
-                'content' => [
-                    'id' => '68016d3egdbe174532',
-                    'name' => 'John Doen',
-                    'email' => 'johndoe@example.com',
-                    'role' => 'SUPERADMIN',
-                    'customer' => null,
-                    'token' => '1|8fG09Kcxc1gnGqGG064tWT8XtSJLDJi1GHYpjKFG',
-                ],
-            ], 200),
+                public function payloadRules(): array
+                {
+                    return [
+                        'payload.email' => ['required', 'email'],
+                        'payload.password' => ['required', 'string'],
+                    ];
+                }
+
+                public function login(array $payload): array
+                {
+                    if (
+                        (string) data_get($payload, 'email') !== 'internal@example.com'
+                        || (string) data_get($payload, 'password') !== 'password'
+                    ) {
+                        throw ValidationException::withMessages([
+                            'payload.email' => ['Credenciais inválidas.'],
+                        ]);
+                    }
+
+                    return [
+                        'token' => '1|internal',
+                        'name' => 'Internal User',
+                        'email' => 'internal@example.com',
+                    ];
+                }
+            },
         ]);
+
+        $this->app->instance(LoginChannelRegistry::class, $registry);
 
         $response = $this->postJson('/api/login', [
-            'login' => 'johndoe@example.com',
-            'password' => 'secret',
-            'google2faValidation' => '123456',
-        ]);
-
-        $response->assertCreated();
-        $response->assertJson([
-            'data' => [
-                'token' => '1|8fG09Kcxc1gnGqGG064tWT8XtSJLDJi1GHYpjKFG',
-                'name' => 'John Doen',
-                'email' => 'johndoe@example.com',
+            'channel' => 'internal',
+            'payload' => [
+                'email' => 'internal@example.com',
+                'password' => 'password',
             ],
         ]);
 
-        Http::assertSent(function ($request) {
-            return $request->url() === 'https://auth.test/auth'
-                && $request['login'] === 'johndoe@example.com'
-                && $request['password'] === 'secret'
-                && $request['google2faValidation'] === '123456';
-        });
-
-        Http::assertSentCount(1);
+        $response->assertCreated();
+        $response->assertJsonPath('data.name', 'Internal User');
+        $response->assertJsonPath('data.email', 'internal@example.com');
+        $response->assertJsonStructure(['data' => ['token', 'name', 'email']]);
+        $response->assertJsonPath('data.token', '1|internal');
     }
 }

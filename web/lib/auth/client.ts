@@ -1,7 +1,7 @@
 import { fetchJsonOrThrow } from "@/lib/auth/http";
 import type { LoginRequestBody, LoginSuccess, MeSuccess } from "@/lib/auth/types";
 
-type LoginBffResponse = { data: { token: string; user: { name: string; email: string } } };
+type LoginBffResponse = { data: { user: { name: string; email: string } } };
 type MeBffResponse = { data: { user: { name: string; email: string } } };
 
 export async function loginViaBff(body: LoginRequestBody): Promise<LoginSuccess> {
@@ -9,30 +9,40 @@ export async function loginViaBff(body: LoginRequestBody): Promise<LoginSuccess>
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
+    credentials: "same-origin",
   });
 
   return {
-    token: result.data.token,
     user: result.data.user,
   };
 }
 
-export async function fetchMeViaBff(token: string): Promise<MeSuccess> {
+export async function fetchMeViaBff(): Promise<MeSuccess> {
   const result = await fetchJsonOrThrow<MeBffResponse>("/api/auth/me", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
+    credentials: "same-origin",
   });
 
   return { user: result.data.user };
 }
 
-export async function logoutViaBff(): Promise<void> {
+export async function logoutViaBff(bearerToken?: string | null): Promise<void> {
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+    accept: "application/json",
+  };
+  const trimmed = bearerToken?.trim();
+  if (trimmed) {
+    headers.Authorization = `Bearer ${trimmed}`;
+  }
+
   await fetchJsonOrThrow<{ ok: true }>("/api/auth/logout", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers,
+    credentials: "same-origin",
   });
 }
 

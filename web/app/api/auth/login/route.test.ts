@@ -51,17 +51,18 @@ describe("POST /api/auth/login (BFF)", () => {
 
     const res = await POST(
       makeLoginRequest({
-        login: "jane@example.com",
-        password: "secret",
-        google2faValidation: null,
+        channel: "internal",
+        payload: {
+          email: "jane@example.com",
+          password: "secret",
+        },
       }),
     );
 
     expect(res.status).toBe(201);
     const json = (await res.json()) as {
-      data: { token: string; user: { name: string; email: string } };
+      data: { user: { name: string; email: string } };
     };
-    expect(json.data.token).toBe("plain-token");
     expect(json.data.user).toEqual({ name: "Jane", email: "jane@example.com" });
     expect(json.data).not.toHaveProperty("extra");
 
@@ -70,9 +71,11 @@ describe("POST /api/auth/login (BFF)", () => {
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({
-          login: "jane@example.com",
-          password: "secret",
-          google2faValidation: null,
+          channel: "internal",
+          payload: {
+            email: "jane@example.com",
+            password: "secret",
+          },
         }),
       }),
     );
@@ -101,7 +104,7 @@ describe("POST /api/auth/login (BFF)", () => {
     );
 
     const res = await POST(
-      makeLoginRequest({ login: "", password: "", google2faValidation: null }),
+      makeLoginRequest({ channel: "internal", payload: { email: "", password: "" } }),
     );
 
     expect(res.status).toBe(422);
@@ -117,9 +120,11 @@ describe("POST /api/auth/login (BFF)", () => {
 
     const res = await POST(
       makeLoginRequest({
-        login: "a@a.com",
-        password: "x",
-        google2faValidation: null,
+        channel: "internal",
+        payload: {
+          email: "a@a.com",
+          password: "x",
+        },
       }),
     );
 
@@ -135,9 +140,11 @@ describe("POST /api/auth/login (BFF)", () => {
     await expect(
       POST(
         makeLoginRequest({
-          login: "a@a.com",
-          password: "x",
-          google2faValidation: null,
+          channel: "internal",
+          payload: {
+            email: "a@a.com",
+            password: "x",
+          },
         }),
       ),
     ).rejects.toThrow("Missing required env var: API_URL");

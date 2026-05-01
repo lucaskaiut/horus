@@ -7,10 +7,11 @@ servers:
 paths:
   /api/login:
     post:
-      summary: Login via servidor de autenticação
+      summary: Login
       description: >
-        Recebe credenciais e repassa para o servidor de autenticação configurado em AUTH_SERVER_URL (base URL).
-        Retorna somente token, name e email.
+        Login local com token interno (Sanctum).
+
+        O endpoint é extensível para múltiplos canais no futuro, mas atualmente o canal suportado é `internal`.
       requestBody:
         required: true
         content:
@@ -18,19 +19,24 @@ paths:
             schema:
               type: object
               required:
-                - login
-                - password
+                - channel
+                - payload
               properties:
-                login:
+                channel:
                   type: string
-                  example: johndoe@example.com
-                password:
-                  type: string
-                  example: "********"
-                google2faValidation:
-                  type: string
-                  nullable: true
-                  example: "******"
+                  enum: [internal]
+                  example: internal
+                payload:
+                  type: object
+                  description: Payload específico do canal.
+                  properties:
+                    email:
+                      type: string
+                      format: email
+                      example: internal@example.com
+                    password:
+                      type: string
+                      example: "********"
       responses:
         "201":
           description: Created
@@ -53,12 +59,59 @@ paths:
                         example: johndoe@example.com
         "422":
           description: Erro de validação
+  /api/register:
+    post:
+      summary: Register
+      description: >
+        Cria um usuário local.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, password_confirmation]
+              properties:
+                name:
+                  type: string
+                  example: John Doen
+                email:
+                  type: string
+                  format: email
+                  example: johndoe@example.com
+                password:
+                  type: string
+                  example: "********"
+                password_confirmation:
+                  type: string
+                  example: "********"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "1"
+                      name:
+                        type: string
+                        example: John Doen
+                      email:
+                        type: string
+                        example: johndoe@example.com
+        "422":
+          description: Erro de validação
   /api/me:
     post:
-      summary: Valida sessão/token via servidor de autenticação
+      summary: Valida sessão/token
       description: >
-        Encaminha o Bearer token para o servidor de autenticação em AUTH_SERVER_URL e valida o retorno.
-        HTTP OK → usuário logado; HTTP Fail → usuário não autenticado.
+        Valida o Bearer token (Sanctum) e retorna os dados do usuário autenticado.
       security:
         - bearerAuth: []
       responses:
@@ -82,6 +135,33 @@ paths:
                   message:
                     type: string
                     example: Usuário não autenticado.
+  /api/logout:
+    post:
+      summary: Encerra sessão (revoga token atual)
+      description: >
+        Revoga o token de acesso Bearer usado na requisição (Sanctum).
+        Após o logout, o mesmo token não deve ser aceito em rotas protegidas.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Sessão encerrada.
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                        example: true
+        "401":
+          description: Não autenticado
   /api/logs:
     get:
       summary: Lista logs com filtros e paginação
