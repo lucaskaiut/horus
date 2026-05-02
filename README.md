@@ -66,6 +66,10 @@ curl -s "http://localhost:8000/api/logs?page=1&per_page=50&sort=received_at&orde
 - Dashboard: `http://localhost:3002/` (resumo via `GET /api/logs/summary`)
 - Listagem: `http://localhost:3002/logs` (filtros em drawer + paginação com `meta` da API)
 
+## Usuários (API)
+
+CRUD autenticado (`Bearer` Sanctum): `GET|POST /api/users`, `GET|PUT|PATCH|DELETE /api/users/{user}`. Ver `api/public/openapi.yaml`.
+
 ## Seed de logs no OpenSearch
 
 Existe um seeder que **gera logs dinamicamente** e **indexa no OpenSearch via `_bulk`** (para volume alto).

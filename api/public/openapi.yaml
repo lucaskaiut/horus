@@ -114,6 +114,165 @@ paths:
                         example: true
         "401":
           description: Não autenticado
+  /api/users:
+    get:
+      summary: Lista usuários
+      description: Paginação por `page` e `per_page` (máx. 100). Requer autenticação Sanctum.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Não autenticado
+        "422":
+          description: Erro de validação
+    post:
+      summary: Cria usuário
+      description: Cria um registro na tabela `users` (gestão interna).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, password_confirmation]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                password_confirmation:
+                  type: string
+      responses:
+        "201":
+          description: Created
+        "401":
+          description: Não autenticado
+        "422":
+          description: Erro de validação
+  /api/users/{user}:
+    parameters:
+      - in: path
+        name: user
+        required: true
+        schema:
+          type: integer
+    get:
+      summary: Detalhe do usuário
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum: [json]
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Não autenticado
+        "404":
+          description: Não encontrado
+        "422":
+          description: Erro de validação
+    put:
+      summary: Atualiza usuário (substituição)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                password_confirmation:
+                  type: string
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Não autenticado
+        "404":
+          description: Não encontrado
+        "422":
+          description: Erro de validação
+    patch:
+      summary: Atualiza usuário (parcial)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                password_confirmation:
+                  type: string
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Não autenticado
+        "404":
+          description: Não encontrado
+        "422":
+          description: Erro de validação
+    delete:
+      summary: Remove usuário
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: dry_run
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Não autenticado
+        "404":
+          description: Não encontrado
+        "422":
+          description: Erro de validação
   /api/logs:
     get:
       summary: Lista logs com filtros e paginação

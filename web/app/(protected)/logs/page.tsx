@@ -3,12 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { ListPaginationBar } from "@/app/(protected)/_components/data-table/list-pagination-bar";
+import { ScrollableDataTable } from "@/app/(protected)/_components/data-table/scrollable-data-table";
 import { fetchJsonOrThrow } from "@/lib/auth/http";
 import type { ListLogsResponse, LogItem, LogLevel, LogsFilters } from "@/lib/logs/types";
 import { formatReceivedAtForDisplay } from "@/lib/logs/format-received-at";
 import { LogDetailModal } from "@/lib/logs/log-detail-modal";
 import { LogLevelBadge } from "@/lib/logs/log-level-badge";
 import { buildLogsSearchParams, parseLogsFiltersFromSearchParams } from "@/lib/logs/query";
+import { safeInt } from "@/lib/pagination";
 
 type PageState =
   | { status: "idle" }
@@ -27,41 +30,6 @@ const LEVELS: { value: LogLevel | ""; label: string }[] = [
   { value: "alert", label: "alert" },
   { value: "emergency", label: "emergency" },
 ];
-
-function safeInt(value: string | null, fallback: number): number {
-  const n = Number(value);
-  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : fallback;
-}
-
-function buildPaginationItems(current: number, last: number): Array<number | "…"> {
-  if (last <= 1) {
-    return [1];
-  }
-
-  const pages = new Set<number>();
-  pages.add(1);
-  pages.add(last);
-
-  for (let p = current - 2; p <= current + 2; p++) {
-    if (p >= 1 && p <= last) {
-      pages.add(p);
-    }
-  }
-
-  const sorted = Array.from(pages).sort((a, b) => a - b);
-  const items: Array<number | "…"> = [];
-
-  for (let i = 0; i < sorted.length; i++) {
-    const page = sorted[i]!;
-    const prev = sorted[i - 1];
-    if (typeof prev === "number" && page - prev > 1) {
-      items.push("…");
-    }
-    items.push(page);
-  }
-
-  return items;
-}
 
 function LogsFiltersDrawer(props: {
   open: boolean;
@@ -296,16 +264,16 @@ function LogsTable(props: {
   onSelectLog: (log: LogItem) => void;
 }) {
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-950">
-      <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 px-4 py-3 text-sm dark:border-white/10">
-        <div className="font-medium text-zinc-900 dark:text-zinc-50">Resultados</div>
-        <div className="text-zinc-600 dark:text-zinc-400">
-          Total: <span className="font-medium text-zinc-900 dark:text-zinc-50">{props.data.meta.total}</span>
-        </div>
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-auto">
-        <table className="min-w-full text-left text-sm">
+    <ScrollableDataTable
+      headerTitle="Resultados"
+      headerRight={
+        <>
+          Total:{" "}
+          <span className="font-medium text-zinc-900 dark:text-zinc-50">{props.data.meta.total}</span>
+        </>
+      }
+    >
+      <table className="min-w-full text-left text-sm">
           <thead className="sticky top-0 z-10 bg-zinc-50 text-xs text-zinc-600 shadow-[0_1px_0_0] shadow-zinc-200 dark:bg-slate-900 dark:text-zinc-300 dark:shadow-white/10">
             <tr>
               <th className="px-4 py-3 font-medium">Data</th>
@@ -371,8 +339,7 @@ function LogsTable(props: {
             ) : null}
           </tbody>
         </table>
-      </div>
-    </section>
+    </ScrollableDataTable>
   );
 }
 
@@ -397,10 +364,6 @@ export default function LogsPage() {
   const meta = state.status === "ready" ? state.data.meta : null;
   const currentMetaPage = state.status === "ready" ? state.data.meta.page : 1;
   const lastPage = meta ? Math.max(1, Math.ceil(meta.total / meta.per_page)) : 1;
-  const pageItems = useMemo(
-    () => buildPaginationItems(currentMetaPage, lastPage),
-    [currentMetaPage, lastPage],
-  );
 
   function goToPage(nextPage: number): void {
     const params = buildLogsSearchParams({
@@ -556,93 +519,15 @@ export default function LogsPage() {
         <LogDetailModal log={detailLog} onClose={() => setDetailLog(null)} />
 
         {state.status === "ready" ? (
-          <section className="shrink-0 flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-950 md:flex-row md:items-center md:justify-between">
-            <div className="text-sm text-zinc-600 dark:text-zinc-400">
-              Página{" "}
-              <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                {state.data.meta.page}
-              </span>{" "}
-              de{" "}
-              <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                {lastPage}
-              </span>{" "}
-              · Total{" "}
-              <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                {state.data.meta.total}
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-3 md:flex-row md:items-center">
-              <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
-                Itens por página
-                <select
-                  aria-label="Itens por página"
-                  value={per_page}
-                  onChange={(e) => setPerPage(safeInt(e.target.value, 50))}
-                  className="h-9 rounded-xl border border-zinc-200 bg-white px-2 text-sm text-zinc-950 outline-none ring-0 transition focus:border-zinc-300 focus:ring-4 focus:ring-zinc-200/40 dark:border-white/10 dark:bg-slate-900 dark:text-zinc-50 dark:focus:ring-white/10"
-                >
-                  {[10, 20, 50, 100].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <nav aria-label="Paginação" className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => goToPage(state.data.meta.page - 1)}
-                  disabled={state.data.meta.page <= 1}
-                  className="inline-flex h-9 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-slate-900 dark:text-zinc-50 dark:hover:bg-slate-800"
-                >
-                  Anterior
-                </button>
-
-                <div className="flex flex-wrap items-center gap-1">
-                  {pageItems.map((item, idx) => {
-                    if (item === "…") {
-                      return (
-                        <span
-                          key={`ellipsis-${idx}`}
-                          className="px-2 text-sm text-zinc-500 dark:text-zinc-400"
-                        >
-                          …
-                        </span>
-                      );
-                    }
-
-                    const isActive = item === state.data.meta.page;
-                    return (
-                      <button
-                        key={item}
-                        type="button"
-                        aria-current={isActive ? "page" : undefined}
-                        onClick={() => goToPage(item)}
-                        className={[
-                          "inline-flex h-9 min-w-9 items-center justify-center rounded-xl border px-3 text-sm font-medium transition",
-                          isActive
-                            ? "border-slate-950 bg-slate-950 text-white dark:border-slate-200 dark:bg-slate-200 dark:text-slate-950"
-                            : "border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-white/10 dark:bg-slate-900 dark:text-zinc-50 dark:hover:bg-slate-800",
-                        ].join(" ")}
-                      >
-                        {item}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => goToPage(state.data.meta.page + 1)}
-                  disabled={state.data.meta.page >= lastPage}
-                  className="inline-flex h-9 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-slate-900 dark:text-zinc-50 dark:hover:bg-slate-800"
-                >
-                  Próxima
-                </button>
-              </nav>
-            </div>
-          </section>
+          <ListPaginationBar
+            currentPage={state.data.meta.page}
+            lastPage={lastPage}
+            total={state.data.meta.total}
+            perPage={per_page}
+            perPageOptions={[10, 20, 50, 100]}
+            onGoToPage={goToPage}
+            onPerPageChange={setPerPage}
+          />
         ) : null}
 
         {state.status === "loading" || state.status === "idle" ? (

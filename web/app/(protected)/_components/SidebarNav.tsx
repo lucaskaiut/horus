@@ -10,6 +10,7 @@ type MenuItem = {
 const ITEMS: MenuItem[] = [
   { id: "dashboard", label: "Dashboard", href: "/" },
   { id: "logs", label: "Logs", href: "/logs" },
+  { id: "users", label: "Usuários", href: "/users" },
 ];
 
 export default function SidebarNav() {
