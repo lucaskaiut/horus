@@ -1,4 +1,4 @@
 interface:
   display_name: "Git Publish"
-  short_description: "Stage, commit and push changes"
-  default_prompt: "Use $git-publish to stage, commit, and push my current changes."
+  short_description: "Stage, semver bump api/web if needed, commit, push"
+  default_prompt: "Use $git-publish to review changes, bump api/web semver when those trees change, then stage, commit, and push."
