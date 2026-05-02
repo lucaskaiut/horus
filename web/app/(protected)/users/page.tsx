@@ -24,11 +24,19 @@ function formatUserDate(iso: string | null): string {
 }
 
 function errorMessageFromHttp(err: unknown): string {
-  if (err instanceof HttpError && err.payload?.message != null && typeof err.payload.message === "string") {
-    return err.payload.message;
+  if (!(err instanceof HttpError) || err.payload == null) {
+    return "Operação falhou. Tente novamente.";
   }
-  if (err instanceof HttpError && err.payload?.errors != null && typeof err.payload.errors === "object") {
-    const first = Object.values(err.payload.errors as Record<string, string[] | string>)[0];
+
+  const p = err.payload;
+  if ("message" in p && typeof p.message === "string" && p.message.length > 0) {
+    return p.message;
+  }
+  if ("error" in p && typeof p.error === "string" && p.error.length > 0) {
+    return p.error;
+  }
+  if ("errors" in p && p.errors != null && typeof p.errors === "object") {
+    const first = Object.values(p.errors as Record<string, string[] | string>)[0];
     if (Array.isArray(first) && first[0]) {
       return String(first[0]);
     }

@@ -6,6 +6,15 @@ alwaysApply: true
 
 Estas regras devem ser aplicadas automaticamente em **todo novo código** criado ou alterado no painel web.
 
+## 0) Execução de comandos (Docker)
+
+- Comandos **npm**, **node**, **next**, **vitest** e equivalentes do frontend devem ser corridos **via Docker Compose**, a partir da **raiz do repositório** (onde está `docker-compose.yml`), no serviço **`web`**.
+- Exemplos (na raiz do monorepo):
+  - Build de produção: `docker compose run --no-deps web sh -lc "npm install && NODE_ENV=production npm run build"` (o serviço `web` define `NODE_ENV=development`; para o `next build` convém forçar `production` **só** no comando de build, depois de `npm install` com todas as dependências, incluindo dev.)
+  - Testes: `docker compose run --no-deps web sh -lc "npm install && npm test"`
+- Usar `--no-deps` quando só precisares do Node do serviço `web`; sem isso o Compose pode subir o `api` e dependências por causa de `depends_on`.
+- Não assumir Node/npm instalados no host para validar ou alterar o painel web; o ambiente de referência é o container `web` definido em `docker-compose.yml`.
+
 ## 1) Todo código novo deve vir com testes
 
 - **UI unit tests obrigatórios**: todo componente/página com interação deve ter testes de UI cobrindo:
@@ -19,7 +28,7 @@ Estas regras devem ser aplicadas automaticamente em **todo novo código** criado
 ## 2) Critérios mínimos para aprovação
 
 - Nenhuma mudança de UI deve ser entregue sem teste que valide **inputs, botões e eventos**.
-- `npm test` deve passar no container.
+- Os testes devem passar no container `web` (por exemplo `docker compose run --no-deps web sh -lc "npm install && npm test"`).
 - Não é permitido “deixar para depois”: se o código foi criado/alterado, os testes entram no mesmo PR/commit.
 
 ## 3) Padrões para testes de UI
