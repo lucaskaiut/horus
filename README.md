@@ -72,7 +72,24 @@ CRUD autenticado (`Bearer` Sanctum): `GET|POST /api/users`, `GET|PUT|PATCH|DELET
 
 ## Seed de logs no OpenSearch
 
-Existe um seeder que **gera logs dinamicamente** e **indexa no OpenSearch via `_bulk`** (para volume alto).
+### Produção e volumes altos (recomendado)
+
+O comando **`logs:bulk-seed`** gera dados **sintéticos** (sem Faker) e envia ao OpenSearch via **`_bulk`**.
+
+```bash
+docker compose exec -T api php artisan logs:bulk-seed --force
+```
+
+Padrões: `--count=2000000`, `--batch=1000`, `--days=365`, `--environment=production`. Acima de **500000** documentos é obrigatório **`--force`** (exceto com **`--dry-run`**).
+
+```bash
+docker compose exec -T api php artisan logs:bulk-seed --count=100 --dry-run
+docker compose exec -T api php artisan logs:bulk-seed --count=2000000 --batch=2000 --days=365 --environment=production --force
+```
+
+### Desenvolvimento (seeder com Faker)
+
+O seeder `LogsOpenSearchSeeder` usa **Faker** (`require-dev`); em imagem de produção sem dependências de desenvolvimento, use **`logs:bulk-seed`**.
 
 Rodar no container `api`:
 
@@ -195,7 +212,7 @@ docker compose exec -T web npm run lint
 ### `/logs` mostra poucos resultados
 
 - Clique em **Limpar** para remover filtros ativos no drawer e/ou querystring.
-- Verifique se o `environment` dos logs seedados bate com o que você espera (`LOGS_SEED_ENV`).
+- Verifique se o `environment` dos logs seedados bate com o que você espera (`LOGS_SEED_ENV` no seeder ou `--environment` em `logs:bulk-seed`).
 
 ### Seed falha por OpenSearch indisponível
 
